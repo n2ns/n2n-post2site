@@ -1,15 +1,15 @@
 {
-  "name": "n2ns-content-mcp",
+  "name": "n2n-writelane",
   "version": "0.1.0",
   "description": "AI-assisted content publishing MCP server for blogs and product guides.",
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git@github.com:n2ns/n2ns-content-mcp.git"
+    "url": "git@github.com:n2ns/n2n-writelane.git"
   },
   "type": "module",
   "bin": {
-    "n2ns-content-mcp": "./dist/index.js"
+    "n2n-writelane": "./dist/index.js"
   },
   "scripts": {
     "build": "rm -rf dist && tsc && chmod 755 dist/index.js",

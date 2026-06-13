@@ -1,8 +1,8 @@
-# N2NS Content MCP
+# N2N WriteLane
 
 AI-assisted content publishing MCP server for blogs and product guides.
 
-N2NS Content MCP is a local Model Context Protocol server that lets AI assistants create, edit, and publish website articles through a configured content API. It is designed for Markdown-first content workflows where an AI coding assistant can help maintain blog posts, SEO articles, changelogs, and product guides without receiving database, shell, infrastructure, payment, or user administration access.
+N2N WriteLane is a local Model Context Protocol server that lets AI assistants create, edit, and publish website articles through a configured content API. It is designed for Markdown-first content workflows where an AI coding assistant can help maintain blog posts, SEO articles, changelogs, and product guides without receiving database, shell, infrastructure, payment, or user administration access.
 
 Use it when you want an AI assistant to work with website content through a narrow, auditable API contract instead of broad backend access.
 
@@ -29,7 +29,7 @@ It does not expose product configuration, pricing plans, database queries, logs,
 
 ## AI-readable publishing model
 
-N2NS Content MCP works with two common publishing spaces:
+N2N WriteLane works with two common publishing spaces:
 
 - Company blog posts use no `content_scope`.
 - Product or collection guides use `content_scope` in kind:key format, for example `product:example-product`.
@@ -73,7 +73,7 @@ Use a wrapper command or an installed package path for real multi-machine use. A
   "mcpServers": {
     "example-content": {
       "command": "node",
-      "args": ["/path/to/n2ns-content-mcp/dist/index.js"],
+      "args": ["/path/to/n2n-writelane/dist/index.js"],
       "env": {
         "CONTENT_API_BASE_URL": "https://example.com/api/v1/mcp",
         "CONTENT_API_KEY": "change-me"
@@ -104,7 +104,7 @@ The MCP uses `content_scope` in tool inputs and sends it as `content_scope` in A
 
 ## Tools
 
-### `n2ns_get_capabilities`
+### `n2n_get_capabilities`
 
 Read the backend Content Publishing API Contract before creating or updating content.
 
@@ -112,7 +112,7 @@ Read the backend Content Publishing API Contract before creating or updating con
 {}
 ```
 
-### `n2ns_list_posts`
+### `n2n_list_posts`
 
 List company blog posts or product/collection guide articles.
 
@@ -130,7 +130,7 @@ Useful filters:
 
 Use `content_scope: ""` to list unscoped company blog posts when the backend supports that convention.
 
-### `n2ns_get_post`
+### `n2n_get_post`
 
 ```json
 {
@@ -138,7 +138,7 @@ Use `content_scope: ""` to list unscoped company blog posts when the backend sup
 }
 ```
 
-### `n2ns_create_post`
+### `n2n_create_post`
 
 Creates a draft by default. Publishing is a separate tool call.
 
@@ -179,7 +179,7 @@ Company blog example:
 }
 ```
 
-### `n2ns_update_post`
+### `n2n_update_post`
 
 ```json
 {
@@ -190,7 +190,7 @@ Company blog example:
 }
 ```
 
-### `n2ns_publish_post`
+### `n2n_publish_post`
 
 ```json
 {
@@ -236,4 +236,4 @@ Built by N2NS Lab (N2N Synthetics Lab), the open-source lab from Datafrog, focus
 
 Learn more: https://n2ns.com
 
-Source repository: git@github.com:n2ns/n2ns-content-mcp.git
+Source repository: git@github.com:n2ns/n2n-writelane.git
