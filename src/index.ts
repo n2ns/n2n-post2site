@@ -16,7 +16,7 @@ import {
 } from './schemas/blog-post.js';
 
 const server = new McpServer({
-  name: 'n2n-writelane',
+  name: 'n2n-post2site',
   version: '0.1.2',
 });
 
@@ -120,6 +120,6 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(`n2n-writelane failed: ${message}`);
+  console.error(`n2n-post2site failed: ${message}`);
   process.exit(1);
 });

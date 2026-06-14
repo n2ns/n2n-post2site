@@ -1,14 +1,14 @@
 {
-  "name": "n2n-writelane",
+  "name": "n2n-post2site",
   "version": "0.1.2",
   "description": "AI-assisted content publishing MCP server for blogs and product guides.",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/n2ns/n2n-writelane.git"
+    "url": "git+ssh://git@github.com/n2ns/n2n-post2site.git"
   },
   "type": "module",
   "bin": {
-    "n2n-writelane": "dist/index.js"
+    "n2n-post2site": "dist/index.js"
   },
   "scripts": {
     "build": "rm -rf dist && tsc && chmod 755 dist/index.js",
@@ -34,5 +34,6 @@
     "README.md",
     "CHANGELOG.md",
     ".env.example"
-  ]
+  ],
+  "license": "MIT"
 }

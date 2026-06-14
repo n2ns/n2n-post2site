@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to N2N WriteLane are documented in this file.
+All notable changes to N2N Post2Site are documented in this file.
 
 ## [0.1.2] - 2026-06-15
 

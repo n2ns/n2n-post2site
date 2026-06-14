@@ -1,89 +1,110 @@
-# N2N WriteLane
+# N2N Post2Site
 
 AI-assisted content publishing MCP server for blogs and product guides.
 
-[![npm version](https://img.shields.io/npm/v/n2n-writelane)](https://www.npmjs.com/package/n2n-writelane)
-[![npm total downloads](https://img.shields.io/npm/dt/n2n-writelane)](https://www.npmjs.com/package/n2n-writelane)
-[![license](https://img.shields.io/github/license/n2ns/n2n-writelane)](https://github.com/n2ns/n2n-writelane/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/n2n-post2site)](https://www.npmjs.com/package/n2n-post2site)
+[![npm total downloads](https://img.shields.io/npm/dt/n2n-post2site)](https://www.npmjs.com/package/n2n-post2site)
+[![license](https://img.shields.io/github/license/n2ns/n2n-post2site)](https://github.com/n2ns/n2n-post2site/blob/main/LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blue)](https://modelcontextprotocol.io)
-[![node version](https://img.shields.io/node/v/n2n-writelane)](https://nodejs.org)
+[![node version](https://img.shields.io/node/v/n2n-post2site)](https://nodejs.org)
 [![DataFrog.io](https://datafrog.io/badges/datafrog.svg)](https://datafrog.io)
 
-N2N WriteLane is a local Model Context Protocol server that lets AI assistants create, edit, and publish website articles through a configured content API. It is designed for Markdown-first content workflows where an AI coding assistant can help maintain blog posts, SEO articles, changelogs, and product guides without receiving database, shell, infrastructure, payment, or user administration access.
+N2N Post2Site lets an AI assistant draft, edit, review, and publish website content through a narrow Content Publishing API Contract. It is built for teams that want AI-assisted blog posts, technical notes, changelogs, and product guides without giving the assistant database access, shell access, deployment access, payment access, or user administration access.
 
-Use it when you want an AI assistant to work with website content through a narrow, auditable API contract instead of broad backend access.
+It is intentionally small: a local MCP bridge between your IDE assistant and your website content API. Your website remains responsible for authentication, validation, storage, preview, publishing rules, and audit behavior.
 
-This project is intentionally a small protocol bridge. It does not include a production CMS, database schema, admin panel, deployment scripts, or server operations. Your website remains responsible for authentication, validation, storage, preview, and publishing rules.
+## Quick summary
 
-## What it is for
+- Runs locally as an MCP server.
+- Connects to one website content API through `CONTENT_API_BASE_URL` and `CONTENT_API_KEY`.
+- Creates drafts by default.
+- Publishes only through an explicit publish tool.
+- Submits one locale per create or update call.
+- Uses Markdown-first content, with optional inline HTML when your site supports it.
+- Reads product context before drafting product guides.
+- Does not expose database, shell, server, payment, user, pricing, or delete operations.
 
-- AI content publishing through the Model Context Protocol.
-- Blog automation for company articles, technical notes, announcements, and changelogs.
-- Product guide publishing with Markdown content and explicit publish steps.
-- Safe article editing through a configured content API.
-- Repeatable content workflows for AI assistants in IDEs and local developer tools.
+## When to use it
 
-## What it exposes
+Use N2N Post2Site when you want an AI assistant to help with:
 
-- get backend publishing capabilities
-- read product context for guide writing
-- list articles
-- get one article
-- create draft
-- update draft/article
-- publish article
+- Company blog posts.
+- Product guides.
+- Technical field notes.
+- Release notes and changelogs.
+- Localized article drafts.
+- Safe updates to existing website content.
 
-It does not expose product configuration, pricing plans, database queries, logs, users, shell commands, deployment, or delete operations.
+Do not use it as a CMS. It does not provide an admin panel, database schema, storage backend, preview system, deployment workflow, or image upload service.
 
-## AI-readable publishing model
+## Publishing model
 
-N2N WriteLane works with two common publishing spaces:
+N2N Post2Site works with two publishing spaces:
 
-- Company blog posts use no `content_scope`.
-- Product or collection guides use `content_scope` in kind:key format, for example `product:example-product`.
+| Space | `content_scope` | Example |
+|---|---|---|
+| Company blog | omitted or empty | technical notes, announcements, changelogs |
+| Product guide | `kind:key` | `product:evisa-helper` |
 
-The AI assistant should submit one locale per create or update call. Treat `title` and `excerpt` as plain text strings, and `content` as a Markdown document string. Inline HTML is allowed when useful, but full HTML pages are not.
+The backend defines which scopes are valid. A product guide should only be written after the assistant reads controlled product context with `n2n_get_product_context`.
 
-Before drafting new content, the AI assistant should search existing posts with `n2n_list_posts`. Before updating an existing post or completing missing locales, it should read the current post with `n2n_get_post`. Product guides should also read `n2n_get_product_context` before drafting.
+The assistant should follow this workflow:
+
+1. Call `n2n_get_capabilities`.
+2. Search existing content with `n2n_list_posts`.
+3. For product guides, call `n2n_get_product_context`.
+4. Create or update one locale at a time.
+5. Review the draft.
+6. Publish only through `n2n_publish_post`.
 
 ## Requirements
 
 - Node.js 22+
+- An MCP-capable client or IDE
 - A site-scoped content API token
-- A backend content API that implements the Content Publishing API Contract
+- A backend that implements the Content Publishing API Contract
 
-## Install for local development
+## Install
+
+For local development:
 
 ```bash
 npm install
 npm run build
+npm run check
+```
+
+For MCP clients, use the published package after it is available on npm:
+
+```bash
+npx -y n2n-post2site
 ```
 
 ## Configuration
 
-Set these environment variables in your MCP client config:
+Set these environment variables in your MCP client configuration:
 
 ```env
 CONTENT_API_BASE_URL=https://example.com/api/v1/mcp
 CONTENT_API_KEY=change-me
 ```
 
-`CONTENT_API_BASE_URL` is the base URL of your protected content API.
+`CONTENT_API_BASE_URL` is the base URL of your protected content API. The backend should expose `/capabilities`, `/products/{content_scope}`, and `/posts` relative to this base URL.
 
-The backend must expose `/capabilities` and article operations under `/posts` relative to `CONTENT_API_BASE_URL`. Keep path and field mapping in the backend adapter, not in the MCP client config.
+Keep path mapping and field mapping in the backend adapter, not in MCP client configuration. The MCP config should only need a base URL and an API key.
 
-Do not put API keys in prompts or article content. Keep secrets in the MCP client environment.
+Do not put API keys in prompts, article content, README examples, or screenshots.
 
-## MCP client example
+## MCP client examples
 
-Use a wrapper command or an installed package path for real multi-machine use. Avoid hard-coded absolute paths when switching between Windows, WSL, and SSH hosts.
+### Using the npm package
 
 ```json
 {
   "mcpServers": {
-    "example-content": {
-      "command": "node",
-      "args": ["/path/to/n2n-writelane/dist/index.js"],
+    "n2n-post2site": {
+      "command": "npx",
+      "args": ["-y", "n2n-post2site"],
       "env": {
         "CONTENT_API_BASE_URL": "https://example.com/api/v1/mcp",
         "CONTENT_API_KEY": "change-me"
@@ -93,11 +114,28 @@ Use a wrapper command or an installed package path for real multi-machine use. A
 }
 ```
 
-One MCP server configuration should bind to exactly one site. Do not make the AI choose a `site_id` in tool arguments.
+### Using a local checkout
 
-## Content Publishing API Contract
+```json
+{
+  "mcpServers": {
+    "n2n-post2site": {
+      "command": "node",
+      "args": ["/path/to/n2n-post2site/dist/index.js"],
+      "env": {
+        "CONTENT_API_BASE_URL": "https://example.com/api/v1/mcp",
+        "CONTENT_API_KEY": "change-me"
+      }
+    }
+  }
+}
+```
 
-The configured backend should support these endpoints relative to `CONTENT_API_BASE_URL`:
+Bind one MCP server configuration to exactly one website. Do not ask the AI assistant to choose a `site_id` in tool arguments.
+
+## Backend API contract
+
+The backend should support these endpoints relative to `CONTENT_API_BASE_URL`:
 
 ```http
 GET    /capabilities
@@ -109,84 +147,34 @@ PATCH  /posts/{id_or_slug}
 POST   /posts/{id_or_slug}/publish
 ```
 
-`GET /capabilities` should describe supported content types, statuses, locales, single-locale input fields, content_scope rules, and available product guide scopes. AI clients should call this endpoint before creating or updating content.
+### `GET /capabilities`
 
-`GET /products/{content_scope}` should return a controlled product fact sheet for product guide writing. The response should include `content_scope`, `canonical_url`, `docs_url`, `summary`, `key_points`, and `do_not_claim`. The AI assistant should use this as the primary source of product facts before drafting a guide.
+Returns the publishing contract for AI clients, including:
 
-The MCP uses `content_scope` in tool inputs and sends it as `content_scope` in API requests. Treat `content_scope` as the canonical publishing space in kind:key format, such as product:example-product, project:example-project, or collection:example-collection.
+- Supported content types.
+- Supported statuses.
+- Supported locales.
+- Single-locale input fields.
+- `content_scope` rules.
+- Available product guide scopes.
+- Safety boundaries.
 
-Backends may return `missing_locales` and `next_actions` after create, update, or publish. When they do, the AI assistant should add missing language versions with additional `n2n_update_post` calls instead of asking the backend to auto-translate.
+### `GET /products/{content_scope}`
 
-Create and update calls must not accept publication governance fields such as `status`, `published_at`, `user_id`, or `author`. Publishing is allowed, but only through the explicit `n2n_publish_post` tool. The backend is responsible for setting `published_at`.
+Returns controlled product context before drafting product guides.
 
-## Tools
+Expected fields:
 
-### `n2n_get_capabilities`
-
-Read the backend Content Publishing API Contract before creating or updating content.
-
-```json
-{}
-```
-
-### `n2n_list_posts`
-
-Search and list existing company blog posts or product/collection guide articles before drafting new content.
-
-Useful filters:
-
-```json
-{
-  "status": "draft",
-  "type": "guide",
-  "content_scope": "product:example-product",
-  "q": "error explanation",
-  "per_page": 20
-}
-```
-
-The `status` field above is only a list filter. Do not send `status` or `published_at` in create or update calls.
-
-Use `content_scope: ""` to list unscoped company blog posts when the backend supports that convention.
-
-### `n2n_get_post`
-
-Read a post before updating it, completing missing locales, or writing a follow-up that depends on previous content.
-
-```json
-{
-  "id_or_slug": "example-guide"
-}
-```
-
-### `n2n_get_product_context`
-
-Read this before creating or updating a product guide.
-
-```json
-{
-  "content_scope": "product:example-product"
-}
-```
-
-Expected backend fields:
-
-- `content_scope`: confirms the product guide scope.
+- `content_scope`: confirms the valid product guide scope.
 - `canonical_url`: product page for deeper reading, links, and citations.
-- `docs_url`: docs or guide index to prefer for tutorial content.
+- `docs_url`: docs or guide index to prefer for tutorials.
 - `summary`: controlled product summary.
-- `key_points`: controlled facts the article may rely on.
-- `do_not_claim`: marketing and factual boundaries the article must not cross.
+- `key_points`: controlled facts the assistant may rely on.
+- `do_not_claim`: claims the assistant must not make.
 
-### `n2n_create_post`
+### Create and update payloads
 
-Creates a draft by default. Publishing is a separate tool call.
-
-Before creating new content, call `n2n_list_posts` with a relevant search query or `content_scope` to avoid duplicating an existing article.
-
-For product guides, call `n2n_get_product_context` first and follow its `canonical_url`, `docs_url`, `summary`, `key_points`, and `do_not_claim`.
-
-Guide example:
+Create and update calls use one locale per request:
 
 ```json
 {
@@ -200,6 +188,68 @@ Guide example:
 }
 ```
 
+Rules:
+
+- `title` is plain text.
+- `excerpt` is plain text.
+- `content` is Markdown.
+- Inline HTML is allowed when useful.
+- Full HTML documents with `<html>`, `<head>`, or `<body>` are not allowed.
+- Create/update must not accept `status`, `published_at`, `user_id`, or `author`.
+- Publishing state changes only through `/posts/{id_or_slug}/publish`.
+
+Backends may return `missing_locales` and `next_actions` after create, update, or publish. The assistant should add missing language versions with additional `n2n_update_post` calls instead of asking the backend to auto-translate.
+
+## MCP tools
+
+### `n2n_get_capabilities`
+
+Read backend capabilities before creating or updating content.
+
+```json
+{}
+```
+
+### `n2n_list_posts`
+
+Search existing posts before drafting new content.
+
+```json
+{
+  "status": "draft",
+  "type": "guide",
+  "content_scope": "product:example-product",
+  "q": "setup guide",
+  "per_page": 20
+}
+```
+
+`status` is only a filter here. Do not send `status` in create or update calls.
+
+### `n2n_get_post`
+
+Read an existing post before updating it, completing missing locales, or writing a follow-up.
+
+```json
+{
+  "id_or_slug": "example-product-guide"
+}
+```
+
+### `n2n_get_product_context`
+
+Read controlled product facts before drafting a product guide.
+
+```json
+{
+  "content_scope": "product:example-product"
+}
+```
+
+### `n2n_create_post`
+
+Create a draft. Publishing is separate.
+
 Company blog example:
 
 ```json
@@ -208,13 +258,28 @@ Company blog example:
   "type": "technical",
   "locale": "en",
   "title": "Content Workflow Notes",
+  "excerpt": "Practical notes from shipping a content workflow.",
   "content": "## Notes\n\nMarkdown content..."
+}
+```
+
+Product guide example:
+
+```json
+{
+  "slug": "example-product-guide",
+  "type": "guide",
+  "content_scope": "product:example-product",
+  "locale": "en",
+  "title": "How to Use Example Product",
+  "excerpt": "A short guide to using the example product.",
+  "content": "## Overview\n\nMarkdown content..."
 }
 ```
 
 ### `n2n_update_post`
 
-Call `n2n_get_post` first so the edit preserves the existing article structure, metadata, and already completed locale content.
+Update one locale of an existing post. Call `n2n_get_post` first.
 
 ```json
 {
@@ -228,7 +293,7 @@ Call `n2n_get_post` first so the edit preserves the existing article structure, 
 
 ### `n2n_publish_post`
 
-Publishes an existing draft. This is the only MCP tool that should change publication state.
+Publish an existing draft.
 
 ```json
 {
@@ -236,17 +301,15 @@ Publishes an existing draft. This is the only MCP tool that should change public
 }
 ```
 
-## Content format rules
+## Content format
 
 - Submit one locale per create or update call.
-- `content` must be a Markdown document string for the selected locale.
-- Markdown may include inline HTML or small HTML blocks when useful.
-- Do not send complete HTML documents with `<html>`, `<head>`, or `<body>`.
+- Use Markdown for `content`.
+- Use fenced code blocks for commands, JSON, YAML, and code examples.
 - Use Markdown image syntax for images.
 - Always include descriptive image alt text.
-- This MCP does not upload images in v1. Reference public URLs or existing site paths.
-- `title` must be plain text.
-- `excerpt` must be a plain text summary.
+- Reference public image URLs or existing site paths.
+- This MCP does not upload images in v1.
 
 Image example:
 
@@ -256,18 +319,29 @@ Image example:
 
 ## Safety boundaries
 
-- One MCP endpoint should bind to one site.
-- Use a site-scoped API token with the minimum permissions needed.
-- Prefer draft creation and explicit publish calls.
+N2N Post2Site should not expose:
+
+- Delete operations.
+- Product configuration writes.
+- Pricing plan writes.
+- User administration.
+- Payment or subscription administration.
+- Database queries.
+- Log access.
+- Shell commands.
+- Deployment or server operations.
+
+Recommended backend behavior:
+
+- Sanitize backend errors before returning them to the AI client.
+- Use a site-scoped API key with the minimum permissions needed.
+- Create drafts by default.
 - Keep create/update and publish separate.
-- Do not expose delete operations through this MCP.
-- Do not expose database queries or server operations through this MCP.
-- Do not pass site selection as a tool argument.
-- Backend errors should be sanitized before being returned to the AI client.
+- Set `published_at` on the backend, not from MCP input.
 
-## Future backend package direction
+## Laravel backend package direction
 
-A Laravel package can implement the HTTP side of this contract for multiple Laravel sites without copying controllers between projects. The MCP server should remain a generic client of that contract.
+A Laravel package can implement the HTTP side of this contract for multiple Laravel sites without copying controllers between projects. N2N Post2Site should stay a generic MCP client of that contract.
 
 ## About N2NS Lab
 
@@ -275,4 +349,4 @@ Built by N2NS Lab, short for Next-to-Native Systems Lab, Datafrog's open-source 
 
 Learn more: https://n2ns.com
 
-Source repository: git@github.com:n2ns/n2n-writelane.git
+Source repository: git@github.com:n2ns/n2n-post2site.git
