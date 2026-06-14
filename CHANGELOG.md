@@ -13,6 +13,7 @@ All notable changes to N2N WriteLane are documented in this file.
 ### Changed
 
 - Product guide creation guidance now requires reading product context before drafting.
+- Content creation guidance now requires searching existing posts first, and update guidance requires reading the target post first.
 - Clarified that create/update must not send publication governance fields such as `status`, `published_at`, `user_id`, or `author`; publishing remains a separate explicit tool call.
 - Version bumped to `0.1.2`.
 

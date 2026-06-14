@@ -35,7 +35,7 @@ server.tool(
 
 server.tool(
   'n2n_list_posts',
-  'List website articles or product guides from the configured content API. Use content_scope for site-defined guide/product areas, and content_scope="" for unscoped company blog posts when the backend supports it.',
+  'Search and list existing website articles or product guides before drafting new content. Use this to avoid duplicate topics and conflicting guidance. For product guides, filter by content_scope. Use content_scope="" for unscoped company blog posts when the backend supports it.',
   listPostsSchema.shape,
   async (input) => {
     const parsed = listPostsSchema.parse(input);
@@ -46,7 +46,7 @@ server.tool(
 
 server.tool(
   'n2n_get_post',
-  'Get one article or guide by numeric ID or slug from the configured site.',
+  'Read one existing article or guide by numeric ID or slug. Use this before updating a post, completing missing locales, or writing a follow-up article that depends on previous content.',
   getPostSchema.shape,
   async (input) => {
     const parsed = getPostSchema.parse(input);
@@ -69,7 +69,7 @@ server.tool(
 
 server.tool(
   'n2n_create_post',
-  'Create an article draft or product guide draft with one locale per call. Before creating a product guide, call n2n_get_product_context for the target content_scope and follow its canonical_url, docs_url, summary, key_points, and do_not_claim. content must be a Markdown document string; inline HTML is allowed when useful. title and excerpt must be plain text. The backend returns missing_locales when more language versions should be added. Use n2n_publish_post to publish.',
+  'Create an article draft or product guide draft with one locale per call. Before creating new content, search existing posts with n2n_list_posts to avoid duplicates. Before creating a product guide, also call n2n_get_product_context for the target content_scope and follow its canonical_url, docs_url, summary, key_points, and do_not_claim. content must be a Markdown document string; inline HTML is allowed when useful. title and excerpt must be plain text. The backend returns missing_locales when more language versions should be added. Use n2n_publish_post to publish.',
   createPostSchema.shape,
   async (input) => {
     const parsed = createPostSchema.parse(input);
@@ -81,7 +81,7 @@ server.tool(
 
 server.tool(
   'n2n_update_post',
-  'Update one locale of an existing article or guide by ID or slug. content must be a Markdown document string; inline HTML is allowed when useful. title and excerpt must be plain text. Use repeated calls with different locale values to add missing language versions.',
+  'Update one locale of an existing article or guide by ID or slug. Always call n2n_get_post first so edits preserve existing content and metadata. content must be a Markdown document string; inline HTML is allowed when useful. title and excerpt must be plain text. Use repeated calls with different locale values to add missing language versions.',
   updatePostSchema.shape,
   async (input) => {
     const parsed = updatePostSchema.parse(input);

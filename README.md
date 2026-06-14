@@ -44,6 +44,8 @@ N2N WriteLane works with two common publishing spaces:
 
 The AI assistant should submit one locale per create or update call. Treat `title` and `excerpt` as plain text strings, and `content` as a Markdown document string. Inline HTML is allowed when useful, but full HTML pages are not.
 
+Before drafting new content, the AI assistant should search existing posts with `n2n_list_posts`. Before updating an existing post or completing missing locales, it should read the current post with `n2n_get_post`. Product guides should also read `n2n_get_product_context` before drafting.
+
 ## Requirements
 
 - Node.js 22+
@@ -129,7 +131,7 @@ Read the backend Content Publishing API Contract before creating or updating con
 
 ### `n2n_list_posts`
 
-List company blog posts or product/collection guide articles.
+Search and list existing company blog posts or product/collection guide articles before drafting new content.
 
 Useful filters:
 
@@ -148,6 +150,8 @@ The `status` field above is only a list filter. Do not send `status` or `publish
 Use `content_scope: ""` to list unscoped company blog posts when the backend supports that convention.
 
 ### `n2n_get_post`
+
+Read a post before updating it, completing missing locales, or writing a follow-up that depends on previous content.
 
 ```json
 {
@@ -178,6 +182,8 @@ Expected backend fields:
 
 Creates a draft by default. Publishing is a separate tool call.
 
+Before creating new content, call `n2n_list_posts` with a relevant search query or `content_scope` to avoid duplicating an existing article.
+
 For product guides, call `n2n_get_product_context` first and follow its `canonical_url`, `docs_url`, `summary`, `key_points`, and `do_not_claim`.
 
 Guide example:
@@ -207,6 +213,8 @@ Company blog example:
 ```
 
 ### `n2n_update_post`
+
+Call `n2n_get_post` first so the edit preserves the existing article structure, metadata, and already completed locale content.
 
 ```json
 {
