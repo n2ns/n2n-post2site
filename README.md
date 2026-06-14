@@ -2,6 +2,13 @@
 
 AI-assisted content publishing MCP server for blogs and product guides.
 
+[![npm version](https://img.shields.io/npm/v/n2n-writelane)](https://www.npmjs.com/package/n2n-writelane)
+[![npm total downloads](https://img.shields.io/npm/dt/n2n-writelane)](https://www.npmjs.com/package/n2n-writelane)
+[![license](https://img.shields.io/github/license/n2ns/n2n-writelane)](https://github.com/n2ns/n2n-writelane/blob/main/LICENSE)
+[![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blue)](https://modelcontextprotocol.io)
+[![node version](https://img.shields.io/node/v/n2n-writelane)](https://nodejs.org)
+[![DataFrog.io](https://datafrog.io/badges/datafrog.svg)](https://datafrog.io)
+
 N2N WriteLane is a local Model Context Protocol server that lets AI assistants create, edit, and publish website articles through a configured content API. It is designed for Markdown-first content workflows where an AI coding assistant can help maintain blog posts, SEO articles, changelogs, and product guides without receiving database, shell, infrastructure, payment, or user administration access.
 
 Use it when you want an AI assistant to work with website content through a narrow, auditable API contract instead of broad backend access.
