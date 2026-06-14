@@ -232,7 +232,7 @@ A Laravel package can implement the HTTP side of this contract for multiple Lara
 
 ## About N2NS Lab
 
-Built by N2NS Lab (N2N Synthetics Lab), the open-source lab from Datafrog, focused on practical AI developer tools.
+Built by N2NS Lab, short for Next-to-Native Systems Lab, Datafrog's open-source lab for AI-native developer tools.
 
 Learn more: https://n2ns.com
 
