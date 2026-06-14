@@ -1,6 +1,6 @@
 {
   "name": "n2n-writelane",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "AI-assisted content publishing MCP server for blogs and product guides.",
   "repository": {
     "type": "git",
@@ -32,6 +32,7 @@
   "files": [
     "dist",
     "README.md",
+    "CHANGELOG.md",
     ".env.example"
   ]
 }

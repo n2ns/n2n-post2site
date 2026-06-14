@@ -1,8 +1,9 @@
 import type { Config } from './config.js';
-import type { CreatePostInput, ListPostsInput, UpdatePostInput } from './schemas/blog-post.js';
+import type { CreatePostInput, ListPostsInput, ProductContextInput, UpdatePostInput } from './schemas/blog-post.js';
 
 const POSTS_PATH = '/posts';
 const CAPABILITIES_PATH = '/capabilities';
+const PRODUCTS_PATH = '/products';
 
 export class ContentClient {
   constructor(private readonly config: Config) {}
@@ -26,10 +27,14 @@ export class ContentClient {
     return this.request(`${POSTS_PATH}/${encodeURIComponent(idOrSlug)}`, { method: 'GET' });
   }
 
+  async getProductContext(input: ProductContextInput): Promise<unknown> {
+    return this.request(`${PRODUCTS_PATH}/${encodeURIComponent(input.content_scope)}`, { method: 'GET' });
+  }
+
   async createPost(input: CreatePostInput): Promise<unknown> {
     return this.request(POSTS_PATH, {
       method: 'POST',
-      body: JSON.stringify({ ...input, status: input.status ?? 'draft' }),
+      body: JSON.stringify(input),
     });
   }
 

@@ -26,6 +26,7 @@ This project is intentionally a small protocol bridge. It does not include a pro
 ## What it exposes
 
 - get backend publishing capabilities
+- read product context for guide writing
 - list articles
 - get one article
 - create draft
@@ -41,7 +42,7 @@ N2N WriteLane works with two common publishing spaces:
 - Company blog posts use no `content_scope`.
 - Product or collection guides use `content_scope` in kind:key format, for example `product:example-product`.
 
-The AI assistant should treat `title` and `excerpt` values as plain text, and `content` values as Markdown document strings. Inline HTML is allowed when useful, but full HTML pages are not.
+The AI assistant should submit one locale per create or update call. Treat `title` and `excerpt` as plain text strings, and `content` as a Markdown document string. Inline HTML is allowed when useful, but full HTML pages are not.
 
 ## Requirements
 
@@ -98,6 +99,7 @@ The configured backend should support these endpoints relative to `CONTENT_API_B
 
 ```http
 GET    /capabilities
+GET    /products/{content_scope}
 GET    /posts
 POST   /posts
 GET    /posts/{id_or_slug}
@@ -105,9 +107,15 @@ PATCH  /posts/{id_or_slug}
 POST   /posts/{id_or_slug}/publish
 ```
 
-`GET /capabilities` should describe supported content types, statuses, locales, localized field formats, content_scope rules, and available product guide scopes. AI clients should call this endpoint before creating or updating content.
+`GET /capabilities` should describe supported content types, statuses, locales, single-locale input fields, content_scope rules, and available product guide scopes. AI clients should call this endpoint before creating or updating content.
+
+`GET /products/{content_scope}` should return a controlled product fact sheet for product guide writing. The response should include `content_scope`, `canonical_url`, `docs_url`, `summary`, `key_points`, and `do_not_claim`. The AI assistant should use this as the primary source of product facts before drafting a guide.
 
 The MCP uses `content_scope` in tool inputs and sends it as `content_scope` in API requests. Treat `content_scope` as the canonical publishing space in kind:key format, such as product:example-product, project:example-project, or collection:example-collection.
+
+Backends may return `missing_locales` and `next_actions` after create, update, or publish. When they do, the AI assistant should add missing language versions with additional `n2n_update_post` calls instead of asking the backend to auto-translate.
+
+Create and update calls must not accept publication governance fields such as `status`, `published_at`, `user_id`, or `author`. Publishing is allowed, but only through the explicit `n2n_publish_post` tool. The backend is responsible for setting `published_at`.
 
 ## Tools
 
@@ -135,6 +143,8 @@ Useful filters:
 }
 ```
 
+The `status` field above is only a list filter. Do not send `status` or `published_at` in create or update calls.
+
 Use `content_scope: ""` to list unscoped company blog posts when the backend supports that convention.
 
 ### `n2n_get_post`
@@ -145,9 +155,30 @@ Use `content_scope: ""` to list unscoped company blog posts when the backend sup
 }
 ```
 
+### `n2n_get_product_context`
+
+Read this before creating or updating a product guide.
+
+```json
+{
+  "content_scope": "product:example-product"
+}
+```
+
+Expected backend fields:
+
+- `content_scope`: confirms the product guide scope.
+- `canonical_url`: product page for deeper reading, links, and citations.
+- `docs_url`: docs or guide index to prefer for tutorial content.
+- `summary`: controlled product summary.
+- `key_points`: controlled facts the article may rely on.
+- `do_not_claim`: marketing and factual boundaries the article must not cross.
+
 ### `n2n_create_post`
 
 Creates a draft by default. Publishing is a separate tool call.
+
+For product guides, call `n2n_get_product_context` first and follow its `canonical_url`, `docs_url`, `summary`, `key_points`, and `do_not_claim`.
 
 Guide example:
 
@@ -156,18 +187,10 @@ Guide example:
   "slug": "example-product-guide",
   "type": "guide",
   "content_scope": "product:example-product",
-  "title": {
-    "en": "How to Use Example Product",
-    "zh_CN": "如何使用示例产品"
-  },
-  "excerpt": {
-    "en": "A short guide to using the example product.",
-    "zh_CN": "使用示例产品的简短指南。"
-  },
-  "content": {
-    "en": "## Overview\n\nMarkdown content...",
-    "zh_CN": "## 概览\n\nMarkdown 中文内容..."
-  }
+  "locale": "en",
+  "title": "How to Use Example Product",
+  "excerpt": "A short guide to using the example product.",
+  "content": "## Overview\n\nMarkdown content..."
 }
 ```
 
@@ -177,12 +200,9 @@ Company blog example:
 {
   "slug": "content-workflow-notes",
   "type": "technical",
-  "title": {
-    "en": "Content Workflow Notes"
-  },
-  "content": {
-    "en": "## Notes\n\nMarkdown content..."
-  }
+  "locale": "en",
+  "title": "Content Workflow Notes",
+  "content": "## Notes\n\nMarkdown content..."
 }
 ```
 
@@ -191,13 +211,16 @@ Company blog example:
 ```json
 {
   "id_or_slug": "example-product-guide",
-  "content": {
-    "en": "## Updated\n\nMarkdown content..."
-  }
+  "locale": "de",
+  "title": "So verwenden Sie Example Product",
+  "excerpt": "A localized summary for the selected locale.",
+  "content": "## Ueberblick\n\nLocalized Markdown content..."
 }
 ```
 
 ### `n2n_publish_post`
+
+Publishes an existing draft. This is the only MCP tool that should change publication state.
 
 ```json
 {
@@ -207,14 +230,15 @@ Company blog example:
 
 ## Content format rules
 
-- `content.*` values must be Markdown document strings.
+- Submit one locale per create or update call.
+- `content` must be a Markdown document string for the selected locale.
 - Markdown may include inline HTML or small HTML blocks when useful.
 - Do not send complete HTML documents with `<html>`, `<head>`, or `<body>`.
 - Use Markdown image syntax for images.
 - Always include descriptive image alt text.
 - This MCP does not upload images in v1. Reference public URLs or existing site paths.
-- `title.*` values must be plain text.
-- `excerpt.*` values must be plain text summaries.
+- `title` must be plain text.
+- `excerpt` must be a plain text summary.
 
 Image example:
 

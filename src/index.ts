@@ -10,13 +10,14 @@ import {
   createPostSchema,
   getPostSchema,
   listPostsSchema,
+  productContextSchema,
   publishPostSchema,
   updatePostSchema,
 } from './schemas/blog-post.js';
 
 const server = new McpServer({
   name: 'n2n-writelane',
-  version: '0.1.0',
+  version: '0.1.2',
 });
 
 const client = new ContentClient(loadConfig());
@@ -55,8 +56,20 @@ server.tool(
 );
 
 server.tool(
+  'n2n_get_product_context',
+  'Read the controlled product fact sheet before writing a product guide. The backend returns content_scope, canonical_url, docs_url, summary, key_points, and do_not_claim so the article does not invent product facts.',
+  productContextSchema.shape,
+  async (input) => {
+    const parsed = productContextSchema.parse(input);
+    assertContentPostShape({ type: 'guide', content_scope: parsed.content_scope });
+    const result = await client.getProductContext(parsed);
+    return textResult(result);
+  }
+);
+
+server.tool(
   'n2n_create_post',
-  'Create an article draft or product guide draft. content values must be Markdown document strings; inline HTML is allowed when useful. title and excerpt values must be plain text. This tool defaults to draft; use n2n_publish_post to publish.',
+  'Create an article draft or product guide draft with one locale per call. Before creating a product guide, call n2n_get_product_context for the target content_scope and follow its canonical_url, docs_url, summary, key_points, and do_not_claim. content must be a Markdown document string; inline HTML is allowed when useful. title and excerpt must be plain text. The backend returns missing_locales when more language versions should be added. Use n2n_publish_post to publish.',
   createPostSchema.shape,
   async (input) => {
     const parsed = createPostSchema.parse(input);
@@ -68,7 +81,7 @@ server.tool(
 
 server.tool(
   'n2n_update_post',
-  'Update an existing article or guide by ID or slug. content values must be Markdown document strings; inline HTML is allowed when useful. title and excerpt values must be plain text.',
+  'Update one locale of an existing article or guide by ID or slug. content must be a Markdown document string; inline HTML is allowed when useful. title and excerpt must be plain text. Use repeated calls with different locale values to add missing language versions.',
   updatePostSchema.shape,
   async (input) => {
     const parsed = updatePostSchema.parse(input);

@@ -38,9 +38,9 @@ describe('ContentClient', () => {
       slug: 'example-guide',
       type: 'guide',
       content_scope: 'product:example-product',
-      status: 'draft',
-      title: { en: 'Example Guide' },
-      content: { en: '## Markdown body' },
+      locale: 'en',
+      title: 'Example Guide',
+      content: '## Markdown body',
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -53,6 +53,23 @@ describe('ContentClient', () => {
         }),
         body: expect.stringContaining('"content_scope":"product:example-product"'),
       })
+    );
+  });
+
+  it('reads product context through the configured products endpoint', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ content_scope: 'product:evisa-helper' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+
+    const client = new ContentClient(config);
+    await client.getProductContext({ content_scope: 'product:evisa-helper' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.com/api/v1/mcp/products/product%3Aevisa-helper',
+      expect.objectContaining({ method: 'GET' })
     );
   });
 
