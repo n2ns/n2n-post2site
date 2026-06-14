@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/n2n-post2site-logo.png" width="128" alt="N2N Post2Site logo">
+</p>
+
 # N2N Post2Site
 
 AI-assisted content publishing MCP server for blogs and product guides.
