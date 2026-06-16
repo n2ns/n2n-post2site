@@ -1,12 +1,16 @@
-import type { Config } from './config.js';
 import type { CreatePostInput, ListDraftsInput, ListPostsInput, ProductContextInput, UpdateDraftInput, UpdatePostInput } from './schemas/blog-post.js';
+import type { Config } from './config.js';
+import { FetchHttpTransport, type HttpTransport } from './transport/http.js';
 
 const POSTS_PATH = '/posts';
 const CAPABILITIES_PATH = '/capabilities';
 const PRODUCTS_PATH = '/products';
 
 export class ContentClient {
-  constructor(private readonly config: Config) {}
+  constructor(
+    private readonly config: Config,
+    private readonly transport: HttpTransport = new FetchHttpTransport(config)
+  ) {}
 
   async getCapabilities(): Promise<unknown> {
     return this.request(CAPABILITIES_PATH, { method: 'GET' });
@@ -15,7 +19,10 @@ export class ContentClient {
   async listPosts(input: ListPostsInput): Promise<unknown> {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(input)) {
-      if (value === undefined) continue;
+      if (value === undefined) {
+        continue;
+      }
+
       params.set(key, String(value));
     }
 
@@ -64,7 +71,7 @@ export class ContentClient {
   }
 
   private async request(path: string, init: RequestInit): Promise<unknown> {
-    const response = await fetch(`${this.config.apiBaseUrl}${path}`, {
+    const response = await this.transport.request(path, {
       ...init,
       headers: {
         Accept: 'application/json',
@@ -75,23 +82,11 @@ export class ContentClient {
       },
     });
 
-    const text = await response.text();
-    const body = parseJsonOrText(text);
-
     if (!response.ok) {
-      throw new Error(`Content API request failed: ${response.status} ${response.statusText}: ${formatBody(body)}`);
+      throw new Error(`Content API request failed: ${response.status} ${response.statusText}: ${formatBody(response.body)}`);
     }
 
-    return body;
-  }
-}
-
-function parseJsonOrText(text: string): unknown {
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
+    return response.body;
   }
 }
 
@@ -121,5 +116,5 @@ function extractPostStatus(body: unknown): string | undefined {
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : undefined;
 }

@@ -6,8 +6,20 @@ All notable changes to N2N Post2Site are documented in this file.
 
 ### Added
 
+- None yet.
+
+## [0.1.3] - 2026-06-17
+
+### Added
+
 - Added `n2n_list_drafts` for listing unpublished drafts through the existing posts endpoint with `status=draft`.
 - Added `n2n_update_draft`, which reads the target post first and refuses to patch unless the backend reports `status: "draft"`.
+- Added `docs/ARCHITECTURE.md` to document runtime layers, module boundaries, and request flow.
+
+### Changed
+
+- Added `docs/ARCHITECTURE.md` to the README related docs list.
+- Bumped package version to `0.1.3`.
 
 ## [0.1.2] - 2026-06-15
 

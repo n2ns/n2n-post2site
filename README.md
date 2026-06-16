@@ -146,6 +146,7 @@ Recommended backend behavior:
 ## 📖 Related docs
 
 - **[Backend API Contract](./docs/BACKEND_API.md)**: Endpoints, payload rules, and security requirements for backend implementors.
+- **[Architecture](./docs/ARCHITECTURE.md)**: Runtime layers, module boundaries, and request flow in the MCP server.
 - **[Tools reference](./docs/TOOLS_REFERENCE.md)**: MCP tool parameter schemas and call examples.
 - **[Roadmap](./ROADMAP.md)**: Planned features and what's coming next.
 - **[Changelog](./CHANGELOG.md)**: Version history and release notes.
