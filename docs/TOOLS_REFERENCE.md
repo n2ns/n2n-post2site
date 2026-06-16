@@ -1,4 +1,8 @@
-# MCP Tools Reference
+# n2n-post2site tools reference
+
+This document describes the MCP tools provided by n2n-post2site. All tools connect to the backend at `CONTENT_API_BASE_URL` and authenticate with `CONTENT_API_KEY`.
+
+See [Backend API Contract](./BACKEND_API.md) for the endpoint specification the backend must implement.
 
 ## `n2n_get_capabilities`
 
@@ -7,6 +11,8 @@ Read backend capabilities before creating or updating content.
 ```json
 {}
 ```
+
+The backend returns supported content types, statuses, locales, input fields, `content_scope` rules, and safety boundaries. The MCP server calls this endpoint before every create or update operation.
 
 ## `n2n_list_posts`
 
@@ -22,7 +28,7 @@ Search existing posts before drafting new content.
 }
 ```
 
-`status` is only a filter here. Do not send `status` in create or update calls.
+`status` is a filter only. Do not send `status` in create or update calls.
 
 ## `n2n_list_drafts`
 
@@ -57,9 +63,11 @@ Read controlled product facts before drafting a product guide.
 }
 ```
 
+The backend returns: `content_scope`, `canonical_url`, `docs_url`, `summary`, `key_points`, and `do_not_claim`.
+
 ## `n2n_create_post`
 
-Create a draft. Publishing is separate.
+Create a draft. Publishing is a separate step.
 
 Company blog example:
 
@@ -125,6 +133,8 @@ Publish an existing draft.
   "id_or_slug": "example-product-guide"
 }
 ```
+
+Publishing state is managed exclusively through this tool, not through create or update payloads.
 
 ## Client method mapping
 

@@ -1,0 +1,78 @@
+# n2n-post2site
+
+> AI-assisted content publishing MCP server for blogs and product guides.
+
+n2n-post2site is an open-source Model Context Protocol (MCP) server that lets an AI assistant draft, edit, review, and publish website content through a narrow Content Publishing API Contract. It is a local MCP bridge between an IDE assistant and a site's content API.
+
+## Search intent coverage
+
+- AI content publishing MCP server
+- MCP server for blog publishing
+- AI-assisted CMS publishing tool
+- MCP content workflow automation
+- AI assistant blog post publishing
+
+## What it is
+
+- A local MCP server that connects an AI assistant to a website content API.
+- A narrow bridge: no database access, no shell access, no deployment access.
+- A tool for teams that want AI-assisted content creation with controlled publishing.
+- A practical AI developer tool built for content workflow automation.
+
+## Use cases
+
+- Draft, review, and publish company blog posts with an AI assistant.
+- Write and localize product guides through structured MCP tools.
+- Automate release notes and changelog drafts.
+- Manage multi-locale content workflows without giving AI broad backend access.
+
+## Not for
+
+- Replacing a full CMS or admin panel.
+- Image uploads (not supported in v1).
+- Direct database or storage backend access.
+- Deployment, server, or infrastructure operations.
+
+## Architecture
+
+n2n-post2site requires a backend that implements the Content Publishing API Contract. The contract defines required HTTP endpoints, payload rules, and security requirements. The MCP server calls the backend; the backend owns authentication, validation, storage, and publishing state.
+
+## Install
+
+```bash
+npx -y n2n-post2site
+```
+
+Requires: Node.js 22+, a site-scoped API key, and a backend implementing the Content Publishing API Contract.
+
+## Environment variables
+
+- `CONTENT_API_BASE_URL`: base URL of the protected content API.
+- `CONTENT_API_KEY`: site-scoped API key.
+
+## Primary MCP tools
+
+- `n2n_get_capabilities`
+- `n2n_list_posts`
+- `n2n_list_drafts`
+- `n2n_get_post`
+- `n2n_get_product_context`
+- `n2n_create_post`
+- `n2n_update_post`
+- `n2n_update_draft`
+- `n2n_publish_post`
+
+## Key docs
+
+- `README.md`: overview, setup, publishing model, content format, security notes.
+- `docs/BACKEND_API.md`: full Content Publishing API Contract for backend implementors.
+- `docs/TOOLS_REFERENCE.md`: MCP tool parameters, behavior notes, and call examples.
+- `CHANGELOG.md`: release history.
+
+## Package and repository
+
+- npm: `n2n-post2site`
+- GitHub: `https://github.com/n2ns/n2n-post2site`
+- License: MIT
+
+Built by N2NS Lab, Datafrog's open-source lab for practical AI developer tools.
