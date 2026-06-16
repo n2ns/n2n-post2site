@@ -9,9 +9,11 @@ import {
   capabilitiesSchema,
   createPostSchema,
   getPostSchema,
+  listDraftsSchema,
   listPostsSchema,
   productContextSchema,
   publishPostSchema,
+  updateDraftSchema,
   updatePostSchema,
 } from './schemas/blog-post.js';
 
@@ -40,6 +42,17 @@ server.tool(
   async (input) => {
     const parsed = listPostsSchema.parse(input);
     const result = await client.listPosts(parsed);
+    return textResult(result);
+  }
+);
+
+server.tool(
+  'n2n_list_drafts',
+  'List unpublished draft articles or product guides. Use this before resuming previous AI-written drafts. This tool always filters status=draft; use type, content_scope, q, and per_page to narrow the results.',
+  listDraftsSchema.shape,
+  async (input) => {
+    const parsed = listDraftsSchema.parse(input);
+    const result = await client.listDrafts(parsed);
     return textResult(result);
   }
 );
@@ -87,6 +100,18 @@ server.tool(
     const parsed = updatePostSchema.parse(input);
     assertContentPostShape(parsed);
     const result = await client.updatePost(parsed);
+    return textResult(result);
+  }
+);
+
+server.tool(
+  'n2n_update_draft',
+  'Update one locale of an unpublished draft by ID or slug. The client reads the post first and refuses to patch unless the backend reports status=draft. Use n2n_list_drafts and n2n_get_post before calling this tool.',
+  updateDraftSchema.shape,
+  async (input) => {
+    const parsed = updateDraftSchema.parse(input);
+    assertContentPostShape(parsed);
+    const result = await client.updateDraft(parsed);
     return textResult(result);
   }
 );

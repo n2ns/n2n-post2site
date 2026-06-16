@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assertContentPostShape, createPostSchema, productContextSchema } from '../src/schemas/blog-post.js';
+import { assertContentPostShape, createPostSchema, listDraftsSchema, productContextSchema } from '../src/schemas/blog-post.js';
 
 describe('blog post schemas', () => {
   it('defaults single-locale submissions to English', () => {
@@ -24,6 +24,14 @@ describe('blog post schemas', () => {
     expect(parsed.content_scope).toBe('product:evisa-helper');
   });
 
+  it('does not expose status on draft-only listing input', () => {
+    const parsed = listDraftsSchema.parse({
+      status: 'published',
+      type: 'guide',
+    });
+
+    expect(parsed).toEqual({ type: 'guide' });
+  });
 
   it('requires kind:key content_scope format', () => {
     expect(() => assertContentPostShape({ type: 'guide', content_scope: 'example-product' })).toThrow(/kind:key/);

@@ -13,6 +13,8 @@ export const listPostsSchema = z.object({
   per_page: z.number().int().min(1).max(100).optional().describe('Page size. Defaults to the server value.'),
 });
 
+export const listDraftsSchema = listPostsSchema.omit({ status: true });
+
 export const getPostSchema = z.object({
   id_or_slug: z.string().min(1).describe('Numeric ID or slug of the article.'),
 });
@@ -36,13 +38,17 @@ export const updatePostSchema = createPostSchema.partial().extend({
   id_or_slug: z.string().min(1).describe('Numeric ID or slug of the article to update.'),
 });
 
+export const updateDraftSchema = updatePostSchema;
+
 export const publishPostSchema = getPostSchema;
 
 export type ListPostsInput = z.infer<typeof listPostsSchema>;
+export type ListDraftsInput = z.infer<typeof listDraftsSchema>;
 export type GetPostInput = z.infer<typeof getPostSchema>;
 export type ProductContextInput = z.infer<typeof productContextSchema>;
 export type CreatePostInput = z.infer<typeof createPostSchema>;
 export type UpdatePostInput = z.infer<typeof updatePostSchema>;
+export type UpdateDraftInput = z.infer<typeof updateDraftSchema>;
 export type PublishPostInput = z.infer<typeof publishPostSchema>;
 
 export function assertContentPostShape(input: { type?: string; content_scope?: string | null }): void {

@@ -2,6 +2,13 @@
 
 All notable changes to N2N Post2Site are documented in this file.
 
+## Unreleased
+
+### Added
+
+- Added `n2n_list_drafts` for listing unpublished drafts through the existing posts endpoint with `status=draft`.
+- Added `n2n_update_draft`, which reads the target post first and refuses to patch unless the backend reports `status: "draft"`.
+
 ## [0.1.2] - 2026-06-15
 
 ### Added

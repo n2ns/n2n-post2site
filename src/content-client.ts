@@ -1,5 +1,5 @@
 import type { Config } from './config.js';
-import type { CreatePostInput, ListPostsInput, ProductContextInput, UpdatePostInput } from './schemas/blog-post.js';
+import type { CreatePostInput, ListDraftsInput, ListPostsInput, ProductContextInput, UpdateDraftInput, UpdatePostInput } from './schemas/blog-post.js';
 
 const POSTS_PATH = '/posts';
 const CAPABILITIES_PATH = '/capabilities';
@@ -23,6 +23,10 @@ export class ContentClient {
     return this.request(`${POSTS_PATH}${suffix}`, { method: 'GET' });
   }
 
+  async listDrafts(input: ListDraftsInput): Promise<unknown> {
+    return this.listPosts({ ...input, status: 'draft' });
+  }
+
   async getPost(idOrSlug: string): Promise<unknown> {
     return this.request(`${POSTS_PATH}/${encodeURIComponent(idOrSlug)}`, { method: 'GET' });
   }
@@ -44,6 +48,13 @@ export class ContentClient {
       method: 'PATCH',
       body: JSON.stringify(payload),
     });
+  }
+
+  async updateDraft(input: UpdateDraftInput): Promise<unknown> {
+    const existingPost = await this.getPost(input.id_or_slug);
+    assertDraftStatus(existingPost);
+
+    return this.updatePost(input);
   }
 
   async publishPost(idOrSlug: string): Promise<unknown> {
@@ -86,4 +97,29 @@ function parseJsonOrText(text: string): unknown {
 
 function formatBody(body: unknown): string {
   return typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+}
+
+function assertDraftStatus(body: unknown): void {
+  const status = extractPostStatus(body);
+  if (status === 'draft') {
+    return;
+  }
+
+  if (status) {
+    throw new Error(`n2n_update_draft requires a draft post. Current status: ${status}.`);
+  }
+
+  throw new Error('n2n_update_draft could not verify draft status. The backend GET /posts/{id_or_slug} response must include a status field.');
+}
+
+function extractPostStatus(body: unknown): string | undefined {
+  const record = asRecord(body);
+  const post = asRecord(record?.blog_post) ?? asRecord(record?.data) ?? record;
+  const status = post?.status;
+
+  return typeof status === 'string' ? status : undefined;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined;
 }

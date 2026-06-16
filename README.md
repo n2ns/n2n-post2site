@@ -24,6 +24,7 @@ It is intentionally small: a local MCP bridge between your IDE assistant and you
 - Creates drafts by default.
 - Publishes only through an explicit publish tool.
 - Submits one locale per create or update call.
+- Can list and update unpublished drafts through draft-specific tools.
 - Uses Markdown-first content, with optional inline HTML when your site supports it.
 - Reads product context before drafting product guides.
 - Does not expose database, shell, server, payment, user, pricing, or delete operations.
@@ -58,8 +59,9 @@ The assistant should follow this workflow:
 2. Search existing content with `n2n_list_posts`.
 3. For product guides, call `n2n_get_product_context`.
 4. Create or update one locale at a time.
-5. Review the draft.
-6. Publish only through `n2n_publish_post`.
+5. Resume unfinished work with `n2n_list_drafts`, `n2n_get_post`, and `n2n_update_draft`.
+6. Review the draft.
+7. Publish only through `n2n_publish_post`.
 
 ## Requirements
 
@@ -239,6 +241,19 @@ Search existing posts before drafting new content.
 
 `status` is only a filter here. Do not send `status` in create or update calls.
 
+### `n2n_list_drafts`
+
+List unpublished drafts. This is a draft-only convenience tool over `GET /posts?status=draft`.
+
+```json
+{
+  "type": "guide",
+  "content_scope": "product:example-product",
+  "q": "setup guide",
+  "per_page": 20
+}
+```
+
 ### `n2n_get_post`
 
 Read an existing post before updating it, completing missing locales, or writing a follow-up.
@@ -304,6 +319,20 @@ Update one locale of an existing post. Call `n2n_get_post` first.
 }
 ```
 
+### `n2n_update_draft`
+
+Update one locale of an unpublished draft. The client reads the post first and refuses to patch unless the backend reports `status: "draft"`.
+
+```json
+{
+  "id_or_slug": "example-product-guide",
+  "locale": "en",
+  "title": "How to Use Example Product",
+  "excerpt": "A refined summary for the draft.",
+  "content": "## Overview\n\nUpdated draft Markdown content..."
+}
+```
+
 ### `n2n_publish_post`
 
 Publish an existing draft.
@@ -352,9 +381,10 @@ Recommended backend behavior:
 - Keep create/update and publish separate.
 - Set `published_at` on the backend, not from MCP input.
 
-## Laravel backend package direction
+## Related docs
 
-A Laravel package can implement the HTTP side of this contract for multiple Laravel sites without copying controllers between projects. N2N Post2Site should stay a generic MCP client of that contract.
+- [Backend API Contract](docs/BACKEND_API.md)
+- [MCP Tools Reference](docs/TOOLS_REFERENCE.md)
 
 ## About N2NS Lab
 
