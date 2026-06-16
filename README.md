@@ -176,6 +176,15 @@ Expected fields:
 - `key_points`: controlled facts the assistant may rely on.
 - `do_not_claim`: claims the assistant must not make.
 
+### `GET /posts`
+
+Returns a list of existing posts or guides. For automated internal linking and search, each post in the list should include:
+
+- `id`: unique identifier.
+- `title`: the post title.
+- `slug`: unique URL slug.
+- `link`: (Required for AI auto-linking) the absolute public URL of the published post on the live website. AI clients rely on this field to safely cross-link between articles without guessing paths.
+
 ### Create and update payloads
 
 Create and update calls use one locale per request:
