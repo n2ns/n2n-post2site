@@ -1,42 +1,39 @@
-# N2N Post2Site 架构说明（v0.1.2）
+# N2N Post2Site Architecture
 
-本文档说明 `n2n-post2site` 当前架构，目标是约束边界、保留接口兼容，并让后续改动有稳定接入点。
+This document describes the current architecture of `n2n-post2site`. The goal is to keep boundaries clear, preserve interface compatibility, and give future changes stable extension points.
 
-## 1. 系统定位
+## 1. What it is
 
-`n2n-post2site` 是 MCP server，作用是：
+`n2n-post2site` is an MCP server. It:
 
-- 解析环境变量并创建 MCP Server 实例。
-- 向 MCP 客户端暴露 9 个内容发布工具。
-- 将工具参数转为对后端内容 API 的 HTTP 调用。
-- 将后端返回值统一封装为 MCP 可展示文本。
+- Loads environment configuration and creates an MCP server instance.
+- Exposes nine content publishing tools to MCP clients.
+- Translates tool arguments into HTTP calls against a backend content API.
+- Wraps backend responses into MCP-displayable text.
 
-它本身不承载持久化、权限管理、审核策略或内容排序决策；这些都应由后端 API 提供方实现。
+It does not own persistence, authorization, review policy, or content-ranking decisions. Those belong to the backend API provider.
 
-## 2. 分层结构
+## 2. Layers
 
-### 2.1 运行入口层（`src/index.ts`）
+### 2.1 Entry (`src/index.ts`)
 
-- 使用 `createServer(loadConfig())` 创建 MCP 实例。
-- 使用 `StdioServerTransport` 与 MCP 客户端通信。
-- 仅负责进程生命周期与失败输出。
+- Creates the server via `createServer(loadConfig())`.
+- Connects to the MCP client over `StdioServerTransport`.
+- Owns only process lifecycle and failure output.
 
-### 2.2 配置层（`src/config.ts`）
+### 2.2 Configuration (`src/config.ts`)
 
-- 读取环境变量：
-  - `CONTENT_API_BASE_URL`
-  - `CONTENT_API_KEY`
-- 校验缺失字段并报错。
-- 统一清理 `CONTENT_API_BASE_URL` 末尾斜杠。
+- Reads `CONTENT_API_BASE_URL` and `CONTENT_API_KEY`.
+- Fails fast on missing values.
+- Normalizes trailing slashes on `CONTENT_API_BASE_URL`.
 
-### 2.3 组装层（`src/server.ts`）
+### 2.3 Assembly (`src/server.ts`)
 
-- 只做“构建与注册”职责：
-  1. 构造 `ContentClient`
-  2. 新建 `McpServer`
-  3. 注册 9 个工具
+Build-and-register only:
 
-当前注册顺序：
+1. Construct `ContentClient`.
+2. Create `McpServer`.
+3. Register the nine tools, in order:
 
 - `n2n_get_capabilities`
 - `n2n_list_posts`
@@ -48,80 +45,69 @@
 - `n2n_update_draft`
 - `n2n_publish_post`
 
-### 2.4 工具层（`src/tools/*.ts`）
+### 2.4 Tools (`src/tools/*.ts`)
 
-每个文件对应一个 MCP tool：
+Each file is one MCP tool:
 
-- 参数校验（Zod schema + 业务约束断言）
-- 调用 `ContentClient` 对应方法
-- 返回统一 `text` 结果
+- Validate input (Zod schema + lightweight assertions).
+- Call the matching `ContentClient` method.
+- Return a uniform `text` result.
 
-工具层职责不包含底层 HTTP、请求头、JSON 解析或路由拼接。
+Tools do not deal with low-level HTTP, headers, JSON parsing, or path building.
 
-### 2.5 传输与客户端层
+### 2.5 Transport and client
 
-- `src/transport/http.ts`
-  - `HttpTransport` 接口
-  - 默认 `FetchHttpTransport` 封装 `fetch`
-  - 负责响应解析（JSON / text）、状态透传
+- `src/transport/http.ts` — the `HttpTransport` interface and the default `FetchHttpTransport` wrapping `fetch`; handles response parsing (JSON/text) and status passthrough.
+- `src/content-client.ts` — builds paths and HTTP methods, injects auth headers (`X-API-KEY` / `Authorization`), turns non-2xx responses into errors, assembles list and route parameters, and implements the `updateDraft` flow:
+  1. `GET /posts/{id_or_slug}`
+  2. require `status === 'draft'`
+  3. then `PATCH /posts/{id_or_slug}`
 
-- `src/content-client.ts`
-  - 统一拼装路径与 HTTP 方法
-  - 注入鉴权头（`X-API-KEY` / `Authorization`）
-  - 统一处理非 2xx 报错为异常
-  - 聚合列表参数与路由参数
-  - 实现 `updateDraft` 的业务校验流程：
-    1. 先调用 `GET /posts/{id_or_slug}`
-    2. 校验 `status === 'draft'`
-    3. 才允许 `PATCH /posts/{id_or_slug}`
+### 2.6 Schemas and validation (`src/schemas/blog-post.ts`)
 
-### 2.6 模型与约束层（`src/schemas/blog-post.ts`）
+- Zod schemas define every tool's input.
+- `type` and `locale` are free strings; the backend is the source of truth for supported values (discoverable via `n2n_get_capabilities`).
+- `assertContentScopeFormat` performs a contract-level format check only: when present, `content_scope` must be `kind:key`. Whether a scope is *required* or *prohibited* for a given type is decided and enforced by the backend (`capabilities.content.content_scope.required_for_types`).
 
-- Zod schema 定义所有工具输入约束。
-- `assertContentPostShape` 强化 `type/content_scope` 规则：
-  - `type=guide` 必须带 `content_scope`
-  - 非 guide 不允许带 `content_scope`
-  - `content_scope` 格式必须是 `kind:key`
+### 2.7 Output (`src/result.ts`)
 
-### 2.7 输出层（`src/result.ts`）
+- `createTextResult` wraps any backend payload into MCP `content: [{ type: 'text', text: ... }]`, keeping all tools' return shape consistent.
 
-- 用 `createTextResult` 将任意后端返回内容转为 MCP `content: [{type:'text', text:...}]`。
-- 维持了所有工具一致的返回格式。
+## 3. Request flow
 
-## 3. 请求流
+Typical call (`n2n_create_post`):
 
-典型调用流（`n2n_create_post`）：
+1. The tool receives arguments.
+2. Zod schema validation + assertions.
+3. `ContentClient.createPost` is called.
+4. `ContentClient` builds the request and sends it via `HttpTransport.request`.
+5. The response body is parsed and returned.
+6. The tool wraps it with `createTextResult` for the MCP client.
 
-1. MCP 工具接收参数
-2. Zod schema 校验 + 业务断言
-3. 调用 `ContentClient.createPost`
-4. `ContentClient` 构造请求并通过 `HttpTransport.request` 发起 HTTP
-5. 解析响应体并返回
-6. 工具层用 `createTextResult` 包装并返回给 MCP
+## 4. Key invariants
 
-## 4. 关键不变式
+- Tool contract is stable (nine tools, names, argument semantics).
+- Backend contract is stable (see `docs/BACKEND_API.md`).
+- CLI/deploy entry is stable (`bin` points to `dist/index.js`).
+- Fail-fast error behavior: missing config or invalid arguments error immediately.
 
-- 工具契约不变（9 个工具 + 名称 + 入参语义）
-- 后端接口契约不变（见 `docs/BACKEND_API.md`）
-- CLI/部署接口不变（`bin` 指向 `dist/index.js`）
-- 错误行为保持“尽早失败”：缺少配置或非法参数立即报错
+## 5. Test boundaries
 
-## 5. 测试边界
+- `tests/server.test.ts` — all nine tools register.
+- `tests/transport.test.ts` / `tests/client.test.ts` — request-layer behavior of `FetchHttpTransport` and `ContentClient`.
+- `tests/schema.test.ts` — input schemas and `content_scope` format checks.
 
-- `tests/server.test.ts`：保证 9 个工具完整注册。
-- `tests/transport.test.ts`：验证 `FetchHttpTransport` 和 `ContentClient` 的请求层行为。
+## 6. Limits and future direction
 
-## 6. 当前架构限制与改造方向
+The design is layered but intentionally a lightweight monolith:
 
-当前设计有清晰分层，但仍是“轻量单体” MCP server：
+- No runtime retry, idempotency, rate limiting, or backoff.
+- A single error mode (errors are thrown uniformly).
+- Tool capabilities are documented statically.
 
-- 无运行时重试、幂等保护、限流和退避策略
-- 无完整错误分类体系（目前统一抛错）
-- 工具能力说明仍以静态文档描述为主
+Possible extensions:
 
-后续可扩展点：
-
-- 新增 `errors.ts` 统一 API 错误模型
-- 在客户端层引入策略性重试/幂等
-- 引入服务层（如 `PostService`）汇聚更复杂业务流
-- 添加端到端契约测试覆盖错误返回形态
+- An `errors.ts` with a unified API error model.
+- Strategic retry / idempotency in the client layer.
+- A service layer (e.g. `PostService`) for richer flows.
+- End-to-end contract tests covering error response shapes.

@@ -4,9 +4,17 @@ All notable changes to N2N Post2Site are documented in this file.
 
 ## Unreleased
 
-### Added
+### Changed
 
-- None yet.
+- **Breaking:** renamed the `n2n_get_product_context` tool to `n2n_get_scope_context`, and the backend endpoint from `GET /products/{content_scope}` to `GET /scopes/{content_scope}`.
+- Treat `content_scope` as generic `kind:key` metadata. Client-side validation now only checks the `kind:key` format; whether a scope is required or prohibited for a content type is decided by the backend (`capabilities.content.content_scope.required_for_types`).
+- Relaxed `type` and `locale` tool inputs from fixed enums to free strings; the backend's `capabilities` is the source of truth for supported values. `status` remains an enum.
+- Genericized tool descriptions and documentation to remove product-only assumptions.
+
+### Removed
+
+- Removed the client-side `type`/`content_scope` coupling (`assertContentPostShape`), replaced by a format-only `assertContentScopeFormat`.
+- Removed the internal `docs/REFACTOR_PLAN.md` working document.
 
 ## [0.1.3] - 2026-06-17
 
