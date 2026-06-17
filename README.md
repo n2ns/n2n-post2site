@@ -11,7 +11,6 @@ AI-assisted content publishing MCP server for blogs, guides, and other categoriz
 [![license](https://img.shields.io/github/license/n2ns/n2n-post2site)](https://github.com/n2ns/n2n-post2site/blob/main/LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blue)](https://modelcontextprotocol.io)
 [![node version](https://img.shields.io/node/v/n2n-post2site)](https://nodejs.org)
-[![DataFrog.io](https://datafrog.io/badges/datafrog.svg)](https://datafrog.io)
 
 ---
 
