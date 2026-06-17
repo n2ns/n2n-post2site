@@ -8,7 +8,7 @@ AI-assisted content publishing MCP server for blogs, guides, and other categoriz
 
 [![npm version](https://img.shields.io/npm/v/n2n-post2site)](https://www.npmjs.com/package/n2n-post2site)
 [![npm total downloads](https://img.shields.io/npm/dt/n2n-post2site)](https://www.npmjs.com/package/n2n-post2site)
-[![license](https://img.shields.io/github/license/n2ns/n2n-post2site)](https://github.com/n2ns/n2n-post2site/blob/main/LICENSE)
+[![license](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blue)](https://modelcontextprotocol.io)
 [![node version](https://img.shields.io/node/v/n2n-post2site)](https://nodejs.org)
 
