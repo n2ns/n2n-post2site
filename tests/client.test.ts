@@ -78,7 +78,7 @@ describe('ContentClient', () => {
     expect(calledUrl.searchParams.get('per_page')).toBe('20');
   });
 
-  it('reads product context through the configured products endpoint', async () => {
+  it('reads scope context through the configured scopes endpoint', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ content_scope: 'product:evisa-helper' }), {
         status: 200,
@@ -87,10 +87,10 @@ describe('ContentClient', () => {
     );
 
     const client = new ContentClient(config);
-    await client.getProductContext({ content_scope: 'product:evisa-helper' });
+    await client.getScopeContext({ content_scope: 'product:evisa-helper' });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://example.com/api/v1/mcp/products/product%3Aevisa-helper',
+      'https://example.com/api/v1/mcp/scopes/product%3Aevisa-helper',
       expect.objectContaining({ method: 'GET' })
     );
   });

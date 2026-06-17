@@ -8,7 +8,7 @@ All endpoints are relative to `CONTENT_API_BASE_URL`.
 
 ```http
 GET    /capabilities
-GET    /products/{content_scope}
+GET    /scopes/{content_scope}
 GET    /posts
 POST   /posts
 GET    /posts/{id_or_slug}
@@ -24,24 +24,24 @@ Returns the publishing contract for AI clients, including:
 - Supported statuses.
 - Supported locales.
 - Single-locale input fields.
-- `content_scope` rules.
-- Available product guide scopes.
+- `content_scope` rules (`content.content_scope`: format, `kinds`, `examples`, `required_for_types`).
+- Available scopes (`scopes`).
 - Safety boundaries.
 
 The MCP server calls this endpoint before every create or update operation.
 
-## `GET /products/{content_scope}`
+## `GET /scopes/{content_scope}`
 
-Returns controlled product context before drafting product guides.
+Returns controlled context for a `content_scope` before drafting scoped content.
 
-Expected response fields:
+The body is `content_scope` plus host-defined controlled fields. Common fields:
 
 | Field | Description |
 | --- | --- |
-| `content_scope` | Confirms the valid product guide scope. |
-| `canonical_url` | Product page for deeper reading, links, and citations. |
+| `content_scope` | Confirms the valid scope. |
+| `canonical_url` | Page for deeper reading, links, and citations. |
 | `docs_url` | Docs or guide index to prefer for tutorials. |
-| `summary` | Controlled product summary. |
+| `summary` | Controlled summary. |
 | `key_points` | Controlled facts the assistant may rely on. |
 | `do_not_claim` | Claims the assistant must not make. |
 
@@ -85,6 +85,7 @@ Create and update calls use one locale per request.
 - `title` is plain text.
 - `excerpt` is plain text.
 - `content` is Markdown. Inline HTML is allowed when useful. Full HTML documents with `<html>`, `<head>`, or `<body>` are not allowed.
+- `content_scope` is an optional `kind:key` value. The backend requires it for the content types listed in `capabilities.content.content_scope.required_for_types` and prohibits it for all other types.
 - Create and update payloads must not accept `status`, `published_at`, `user_id`, or `author`.
 - Publishing state changes only through `POST /posts/{id_or_slug}/publish`.
 

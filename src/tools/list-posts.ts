@@ -7,7 +7,7 @@ import { ContentClient } from '../content-client.js';
 export function registerListPostsTool(server: McpServer, client: ContentClient): void {
   server.tool(
     'n2n_list_posts',
-    'Search and list existing website articles or product guides before drafting new content. Use this to avoid duplicate topics and conflicting guidance. For product guides, filter by content_scope. Use content_scope="" for unscoped company blog posts when the backend supports it.',
+    'Search and list existing posts before drafting new content, to avoid duplicate topics and conflicting guidance. Filter by content_scope for scoped content, or content_scope="" for unscoped posts when the backend supports it.',
     listPostsSchema.shape,
     async (input) => {
       const parsed = listPostsSchema.parse(input);

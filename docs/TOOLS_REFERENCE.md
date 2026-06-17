@@ -53,9 +53,9 @@ Read an existing post before updating it, completing missing locales, or writing
 }
 ```
 
-## `n2n_get_product_context`
+## `n2n_get_scope_context`
 
-Read controlled product facts before drafting a product guide.
+Read controlled facts for a `content_scope` before drafting scoped content.
 
 ```json
 {
@@ -63,7 +63,7 @@ Read controlled product facts before drafting a product guide.
 }
 ```
 
-The backend returns: `content_scope`, `canonical_url`, `docs_url`, `summary`, `key_points`, and `do_not_claim`.
+The backend returns `content_scope` plus host-defined controlled fields, commonly `canonical_url`, `docs_url`, `summary`, `key_points`, and `do_not_claim`.
 
 ## `n2n_create_post`
 
@@ -82,7 +82,7 @@ Company blog example:
 }
 ```
 
-Product guide example:
+Scoped content example (a type that requires a content_scope):
 
 ```json
 {

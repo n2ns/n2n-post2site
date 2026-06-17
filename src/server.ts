@@ -5,7 +5,7 @@ import { ContentClient } from './content-client.js';
 import { registerCreatePostTool } from './tools/create-post.js';
 import { registerGetCapabilitiesTool } from './tools/get-capabilities.js';
 import { registerGetPostTool } from './tools/get-post.js';
-import { registerGetProductContextTool } from './tools/get-product-context.js';
+import { registerGetScopeContextTool } from './tools/get-scope-context.js';
 import { registerListDraftsTool } from './tools/list-drafts.js';
 import { registerListPostsTool } from './tools/list-posts.js';
 import { registerPublishPostTool } from './tools/publish-post.js';
@@ -24,7 +24,7 @@ export function createServer(config: Config): McpServer {
   registerListPostsTool(server, client);
   registerListDraftsTool(server, client);
   registerGetPostTool(server, client);
-  registerGetProductContextTool(server, client);
+  registerGetScopeContextTool(server, client);
   registerCreatePostTool(server, client);
   registerUpdatePostTool(server, client);
   registerUpdateDraftTool(server, client);

@@ -4,7 +4,7 @@
 
 # n2n-post2site
 
-AI-assisted content publishing MCP server for blogs and product guides.
+AI-assisted content publishing MCP server for blogs, guides, and other categorized content.
 
 [![npm version](https://img.shields.io/npm/v/n2n-post2site)](https://www.npmjs.com/package/n2n-post2site)
 [![npm total downloads](https://img.shields.io/npm/dt/n2n-post2site)](https://www.npmjs.com/package/n2n-post2site)
@@ -27,20 +27,20 @@ Use it for blog posts, product guides, technical notes, release notes, and local
 
 ## 📰 Publishing model
 
-n2n-post2site works with two publishing spaces:
+n2n-post2site classifies content with an optional `content_scope`:
 
-| Space | `content_scope` | Example |
+| Content | `content_scope` | Example |
 |---|---|---|
-| Company blog | omitted or empty | technical notes, announcements, changelogs |
-| Product guide | `kind:key` | `product:evisa-helper` |
+| Unscoped | omitted or empty | technical notes, announcements, changelogs |
+| Scoped | `kind:key` | `product:evisa-helper` |
 
-The backend defines which scopes are valid. A product guide should only be written after the assistant reads controlled product context with `n2n_get_product_context`.
+The backend defines which `content_scope` kinds are valid and which content types require one. Scoped content should only be written after the assistant reads controlled context with `n2n_get_scope_context`.
 
 The assistant should follow this workflow:
 
 1. Call `n2n_get_capabilities`.
 2. Search existing content with `n2n_list_posts`.
-3. For product guides, call `n2n_get_product_context`.
+3. For scoped content, call `n2n_get_scope_context`.
 4. Create or update one locale at a time.
 5. Resume unfinished work with `n2n_list_drafts`, `n2n_get_post`, and `n2n_update_draft`.
 6. Review the draft.
@@ -99,7 +99,7 @@ See **[Backend API Contract](./docs/BACKEND_API.md)** for the full specification
 
 ## 🛠️ MCP tools
 
-- **Discovery**: read backend capabilities, list existing posts, and load product context before drafting.
+- **Discovery**: read backend capabilities, list existing posts, and load scope context before drafting.
 - **Drafting**: create posts, update posts one locale at a time, and resume unpublished drafts.
 - **Publishing**: publish an approved draft through an explicit publish step.
 

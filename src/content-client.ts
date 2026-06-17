@@ -1,10 +1,10 @@
-import type { CreatePostInput, ListDraftsInput, ListPostsInput, ProductContextInput, UpdateDraftInput, UpdatePostInput } from './schemas/blog-post.js';
+import type { CreatePostInput, ListDraftsInput, ListPostsInput, ScopeContextInput, UpdateDraftInput, UpdatePostInput } from './schemas/blog-post.js';
 import type { Config } from './config.js';
 import { FetchHttpTransport, type HttpTransport } from './transport/http.js';
 
 const POSTS_PATH = '/posts';
 const CAPABILITIES_PATH = '/capabilities';
-const PRODUCTS_PATH = '/products';
+const SCOPES_PATH = '/scopes';
 
 export class ContentClient {
   constructor(
@@ -38,8 +38,8 @@ export class ContentClient {
     return this.request(`${POSTS_PATH}/${encodeURIComponent(idOrSlug)}`, { method: 'GET' });
   }
 
-  async getProductContext(input: ProductContextInput): Promise<unknown> {
-    return this.request(`${PRODUCTS_PATH}/${encodeURIComponent(input.content_scope)}`, { method: 'GET' });
+  async getScopeContext(input: ScopeContextInput): Promise<unknown> {
+    return this.request(`${SCOPES_PATH}/${encodeURIComponent(input.content_scope)}`, { method: 'GET' });
   }
 
   async createPost(input: CreatePostInput): Promise<unknown> {

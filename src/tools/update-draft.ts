@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { createTextResult } from '../result.js';
-import { assertContentPostShape, updateDraftSchema } from '../schemas/blog-post.js';
+import { assertContentScopeFormat, updateDraftSchema } from '../schemas/blog-post.js';
 import { ContentClient } from '../content-client.js';
 
 export function registerUpdateDraftTool(server: McpServer, client: ContentClient): void {
@@ -11,7 +11,7 @@ export function registerUpdateDraftTool(server: McpServer, client: ContentClient
     updateDraftSchema.shape,
     async (input) => {
       const parsed = updateDraftSchema.parse(input);
-      assertContentPostShape(parsed);
+      assertContentScopeFormat(parsed.content_scope);
       const result = await client.updateDraft(parsed);
       return createTextResult(result);
     }

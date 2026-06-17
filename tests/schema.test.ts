@@ -1,25 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { assertContentPostShape, createPostSchema, listDraftsSchema, productContextSchema } from '../src/schemas/blog-post.js';
+import { assertContentScopeFormat, createPostSchema, listDraftsSchema, scopeContextSchema } from '../src/schemas/blog-post.js';
 
 describe('blog post schemas', () => {
-  it('defaults single-locale submissions to English', () => {
+  it('leaves type and locale to the backend default when omitted', () => {
     const parsed = createPostSchema.parse({
       slug: 'company-post',
-      type: 'technical',
       title: 'Title',
       content: '## Markdown\n\nBody',
     });
 
-    expect(parsed.locale).toBe('en');
+    expect(parsed.type).toBeUndefined();
+    expect(parsed.locale).toBeUndefined();
   });
 
-  it('requires content_scope for guides', () => {
-    expect(() => assertContentPostShape({ type: 'guide' })).toThrow(/content_scope is required/);
-    expect(() => assertContentPostShape({ type: 'guide', content_scope: 'product:example-product' })).not.toThrow();
-  });
-
-  it('accepts product context lookup scope', () => {
-    const parsed = productContextSchema.parse({ content_scope: 'product:evisa-helper' });
+  it('accepts a kind:key scope context lookup', () => {
+    const parsed = scopeContextSchema.parse({ content_scope: 'product:evisa-helper' });
 
     expect(parsed.content_scope).toBe('product:evisa-helper');
   });
@@ -33,11 +28,9 @@ describe('blog post schemas', () => {
     expect(parsed).toEqual({ type: 'guide' });
   });
 
-  it('requires kind:key content_scope format', () => {
-    expect(() => assertContentPostShape({ type: 'guide', content_scope: 'example-product' })).toThrow(/kind:key/);
-  });
-
-  it('rejects content_scope for company blog posts', () => {
-    expect(() => assertContentPostShape({ type: 'technical', content_scope: 'product:example-product' })).toThrow(/only allowed/);
+  it('rejects a malformed content_scope but accepts kind:key', () => {
+    expect(() => assertContentScopeFormat('example-product')).toThrow(/kind:key/);
+    expect(() => assertContentScopeFormat('product:example')).not.toThrow();
+    expect(() => assertContentScopeFormat(undefined)).not.toThrow();
   });
 });

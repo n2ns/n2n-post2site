@@ -25,7 +25,7 @@ describe('MCP server wiring', () => {
       'n2n_list_posts',
       'n2n_list_drafts',
       'n2n_get_post',
-      'n2n_get_product_context',
+      'n2n_get_scope_context',
       'n2n_create_post',
       'n2n_update_post',
       'n2n_update_draft',
