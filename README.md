@@ -18,11 +18,53 @@ AI-assisted content publishing MCP server for blogs, guides, and other categoriz
 
 n2n-post2site is an open-source Model Context Protocol (MCP) server that lets an AI assistant draft, edit, review, and publish website content through a narrow Content Publishing API Contract. It is a local MCP bridge between your IDE assistant and your website content API — intentionally small, with no database access, shell access, deployment access, payment access, or user administration access.
 
+## 📚 Contents
+
+- [What is n2n-post2site?](#-what-is-n2n-post2site)
+- [Architecture](#️-architecture)
+- [Publishing model](#-publishing-model)
+- [Quick start](#-quick-start)
+- [Backend API contract](#-backend-api-contract)
+- [MCP tools](#️-mcp-tools)
+- [Content format](#-content-format)
+- [Security and governance notes](#-security-and-governance-notes)
+- [Related docs](#-related-docs)
+
 ## 💡 What is n2n-post2site?
 
 n2n-post2site gives AI coding assistants a structured path to draft and publish website content without exposing the database, file system, or deployment layer. Your backend implements the Content Publishing API Contract; the MCP server forwards AI tool calls to it.
 
 Use it for blog posts, product guides, technical notes, release notes, and localized article drafts. It is not a CMS — no admin panel, no storage backend, no image uploads (v1), no deployment workflow.
+
+## 🏗️ Architecture
+
+```text
+┌─────────────────────────────┐
+│     AI coding assistant     │
+│   (Claude, Cursor, VS Code) │
+└──────────────┬──────────────┘
+               │ MCP tool calls (stdio)
+               ▼
+┌─────────────────────────────┐
+│        n2n-post2site        │
+│     MCP server · 9 tools    │
+│  validate → map → HTTP call │
+└──────────────┬──────────────┘
+               │ HTTPS + site-scoped API key
+               ▼
+┌─────────────────────────────┐
+│   Your backend content API  │
+│  (Content Publishing API    │
+│   Contract)                 │
+│  owns storage, auth, policy │
+└─────────────────────────────┘
+```
+
+- **The MCP server is a thin bridge**: it validates tool input, maps it to the contract, and forwards HTTP calls. It owns no persistence, authorization, or review policy.
+- **The backend owns the truth**: storage, publishing state, and access control all live behind the contract.
+- **One server, one site**: each MCP instance is bound to a single website through `CONTENT_API_BASE_URL` and `CONTENT_API_KEY`.
+
+See [Architecture](./docs/ARCHITECTURE.md) for the full layer breakdown.
 
 ## 📰 Publishing model
 
@@ -48,6 +90,8 @@ The assistant should follow this workflow:
 ## 🚀 Quick start
 
 **Requirements**: Node.js 22+, an MCP-capable client, a site-scoped API key, and a backend that implements the [Content Publishing API Contract](./docs/BACKEND_API.md).
+
+> **Just trying it out?** Run the [mock backend](./examples/mock-backend/) for a zero-dependency local server that implements the full contract — no website required.
 
 ### 1. Configure your MCP client
 
@@ -98,9 +142,9 @@ See **[Backend API Contract](./docs/BACKEND_API.md)** for the full specification
 
 ## 🛠️ MCP tools
 
-- **Discovery**: read backend capabilities, list existing posts, and load scope context before drafting.
-- **Drafting**: create posts, update posts one locale at a time, and resume unpublished drafts.
-- **Publishing**: publish an approved draft through an explicit publish step.
+- **Discovery** (`n2n_get_capabilities`, `n2n_list_posts`, `n2n_get_scope_context`): read backend capabilities, list existing posts, and load scope context before drafting.
+- **Drafting** (`n2n_create_post`, `n2n_update_post`, `n2n_update_draft`, `n2n_list_drafts`, `n2n_get_post`): create posts, update posts one locale at a time, and resume unpublished drafts.
+- **Publishing** (`n2n_publish_post`): publish an approved draft through an explicit publish step.
 
 See [Tools reference](./docs/TOOLS_REFERENCE.md) for parameter schemas and call examples.
 
