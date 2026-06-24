@@ -138,6 +138,9 @@ Bind one server instance to exactly one website.
 
 n2n-post2site connects to any backend that implements the Content Publishing API Contract. The contract defines the required endpoints, payload rules, and security requirements.
 
+For Laravel sites, [`n2ns/laravel-post2site`](https://github.com/n2ns/laravel-post2site)
+is the first-party backend package for this contract.
+
 See **[Backend API Contract](./docs/BACKEND_API.md)** for the full specification.
 
 ## 🛠️ MCP tools

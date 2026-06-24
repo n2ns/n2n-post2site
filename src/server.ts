@@ -17,7 +17,7 @@ export function createServer(config: Config): McpServer {
 
   const server = new McpServer({
     name: 'n2n-post2site',
-    version: '0.1.2',
+    version: '0.1.4',
   });
 
   registerGetCapabilitiesTool(server, client);

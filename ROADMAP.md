@@ -10,7 +10,7 @@ The v0.1 series establishes the core publishing workflow:
 
 - Read backend capabilities before drafting content.
 - Search existing posts before creating new ones.
-- Read controlled product facts before writing product guides.
+- Read controlled scope context before drafting scoped content.
 - Create and update drafts one locale at a time.
 - Publish through a separate, explicit tool call.
 
@@ -22,8 +22,7 @@ The MCP client is intentionally thin. It adds no local state and no content logi
 
 **Goal**: remove hardcoded assumptions, make the client adapt to what the backend reports.
 
-- **Dynamic locale list**: read supported locales from `GET /capabilities` instead of using a fixed enum in the MCP schema. This allows backends to support additional locales without requiring a client update.
-- **Dynamic content type list**: same approach for `technical`, `announcement`, `changelog`, `guide`, and any types the backend adds later.
+- **Capability-driven client hints**: continue improving how assistants use backend-reported locales, content types, scope rules, and field limits. The current client already treats `type` and `locale` as backend-owned free strings.
 - **Post list pagination**: add `page` (or a cursor field) alongside the existing `per_page` filter so assistants can page through large content archives.
 - **Date range filter**: add `created_after` and `updated_after` filters to `n2n_list_posts` for discovering recent or recently changed content.
 
@@ -43,7 +42,7 @@ The MCP client is intentionally thin. It adds no local state and no content logi
 
 **Goal**: make it practical for teams to implement the Content Publishing API Contract on their own backend.
 
-- **OpenAPI specification**: publish a machine-readable spec for the seven endpoints the MCP client calls (`/capabilities`, `/products/{scope}`, `/posts`, `/posts/{id}`, `/posts/{id}/publish`). This gives backend authors a clear target to implement against.
+- **OpenAPI specification**: publish a machine-readable spec for the endpoints the MCP client calls (`GET /capabilities`, `GET /scopes/{content_scope}`, `GET /posts`, `POST /posts`, `GET /posts/{id_or_slug}`, `PATCH /posts/{id_or_slug}`, `POST /posts/{id_or_slug}/publish`). This gives backend authors a clear target to implement against.
 - **Reference backend**: provide a minimal reference implementation or adapter package for a common web framework. This would implement the required endpoints without requiring teams to interpret the README contract section by hand.
 - **Contract conformance tests**: a test suite that any backend implementation can run to verify it satisfies the contract.
 
@@ -54,7 +53,7 @@ The MCP client is intentionally thin. It adds no local state and no content logi
 **Goal**: let assistants clean up draft content they created.
 
 - **Delete draft tool** (`n2n_delete_draft`): allow deletion of unpublished drafts only. Published posts remain outside the MCP scope — deletion of live content requires backend-side admin controls.
-- **Draft listing**: add a dedicated draft-only listing view with richer status fields.
+- **Richer draft metadata**: extend the existing `n2n_list_drafts` workflow with clearer next actions, stale-draft signals, and review status fields when backends expose them.
 
 ---
 

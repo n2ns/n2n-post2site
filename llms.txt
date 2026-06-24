@@ -1,6 +1,6 @@
 # n2n-post2site
 
-> AI-assisted content publishing MCP server for blogs and product guides.
+> AI-assisted content publishing MCP server for blogs, guides, and categorized content.
 
 n2n-post2site is an open-source Model Context Protocol (MCP) server that lets an AI assistant draft, edit, review, and publish website content through a narrow Content Publishing API Contract. It is a local MCP bridge between an IDE assistant and a site's content API.
 
@@ -22,7 +22,7 @@ n2n-post2site is an open-source Model Context Protocol (MCP) server that lets an
 ## Use cases
 
 - Draft, review, and publish blog posts with an AI assistant.
-- Write and localize product guides through structured MCP tools.
+- Write and localize scoped guides through structured MCP tools.
 - Automate release notes and changelog drafts.
 - Manage multi-locale content workflows without giving AI broad backend access.
 
@@ -56,7 +56,7 @@ Requires: Node.js 22+, a site-scoped API key, and a backend implementing the Con
 - `n2n_list_posts`
 - `n2n_list_drafts`
 - `n2n_get_post`
-- `n2n_get_product_context`
+- `n2n_get_scope_context`
 - `n2n_create_post`
 - `n2n_update_post`
 - `n2n_update_draft`
