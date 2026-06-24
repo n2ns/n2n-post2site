@@ -4,6 +4,8 @@ All notable changes to N2N Post2Site are documented in this file.
 
 ## Unreleased
 
+## [0.1.4] - 2026-06-24
+
 ### Changed
 
 - **Breaking:** renamed the `n2n_get_product_context` tool to `n2n_get_scope_context`, and the backend endpoint from `GET /products/{content_scope}` to `GET /scopes/{content_scope}`.

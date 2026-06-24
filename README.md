@@ -73,7 +73,7 @@ n2n-post2site classifies content with an optional `content_scope`:
 | Content | `content_scope` | Example |
 |---|---|---|
 | Unscoped | omitted or empty | technical notes, announcements, changelogs |
-| Scoped | `kind:key` | `product:evisa-helper` |
+| Scoped | `kind:key` | `product:example-product` |
 
 The backend defines which `content_scope` kinds are valid and which content types require one. Scoped content should only be written after the assistant reads controlled context with `n2n_get_scope_context`.
 
@@ -202,4 +202,4 @@ This project is licensed under the [MIT License](./LICENSE).
 
 ---
 
-Built by [N2NS Lab](https://n2ns.com), the open-source lab of [datafrog.io](https://datafrog.io) for practical AI developer tools.
+Built by [N2NS Lab](https://n2ns.com), an open-source lab for practical AI developer tools.

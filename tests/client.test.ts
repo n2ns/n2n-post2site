@@ -80,17 +80,17 @@ describe('ContentClient', () => {
 
   it('reads scope context through the configured scopes endpoint', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ content_scope: 'product:evisa-helper' }), {
+      new Response(JSON.stringify({ content_scope: 'product:example-product' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
     );
 
     const client = new ContentClient(config);
-    await client.getScopeContext({ content_scope: 'product:evisa-helper' });
+    await client.getScopeContext({ content_scope: 'product:example-product' });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://example.com/api/v1/mcp/scopes/product%3Aevisa-helper',
+      'https://example.com/api/v1/mcp/scopes/product%3Aexample-product',
       expect.objectContaining({ method: 'GET' })
     );
   });

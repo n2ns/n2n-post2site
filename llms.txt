@@ -21,7 +21,7 @@ n2n-post2site is an open-source Model Context Protocol (MCP) server that lets an
 
 ## Use cases
 
-- Draft, review, and publish company blog posts with an AI assistant.
+- Draft, review, and publish blog posts with an AI assistant.
 - Write and localize product guides through structured MCP tools.
 - Automate release notes and changelog drafts.
 - Manage multi-locale content workflows without giving AI broad backend access.
@@ -75,4 +75,4 @@ Requires: Node.js 22+, a site-scoped API key, and a backend implementing the Con
 - GitHub: `https://github.com/n2ns/n2n-post2site`
 - License: MIT
 
-Built by N2NS Lab, Datafrog's open-source lab for practical AI developer tools.
+Built by N2NS Lab for practical AI developer tools.

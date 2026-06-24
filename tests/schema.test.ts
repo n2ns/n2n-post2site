@@ -4,7 +4,7 @@ import { assertContentScopeFormat, createPostSchema, listDraftsSchema, scopeCont
 describe('blog post schemas', () => {
   it('leaves type and locale to the backend default when omitted', () => {
     const parsed = createPostSchema.parse({
-      slug: 'company-post',
+      slug: 'example-post',
       title: 'Title',
       content: '## Markdown\n\nBody',
     });
@@ -14,9 +14,9 @@ describe('blog post schemas', () => {
   });
 
   it('accepts a kind:key scope context lookup', () => {
-    const parsed = scopeContextSchema.parse({ content_scope: 'product:evisa-helper' });
+    const parsed = scopeContextSchema.parse({ content_scope: 'product:example-product' });
 
-    expect(parsed.content_scope).toBe('product:evisa-helper');
+    expect(parsed.content_scope).toBe('product:example-product');
   });
 
   it('does not expose status on draft-only listing input', () => {

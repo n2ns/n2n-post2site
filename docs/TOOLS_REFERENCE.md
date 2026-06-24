@@ -69,7 +69,7 @@ The backend returns `content_scope` plus host-defined controlled fields, commonl
 
 Create a draft. Publishing is a separate step.
 
-Company blog example:
+Blog post example:
 
 ```json
 {

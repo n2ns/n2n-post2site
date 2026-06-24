@@ -8,7 +8,7 @@ Security fixes target the latest published version of N2N Post2Site.
 
 Please do not open a public issue for suspected vulnerabilities.
 
-Report security concerns through GitHub private vulnerability reporting for this repository, or contact Datafrog through the security channel listed on the organization profile.
+Report security concerns through GitHub private vulnerability reporting for this repository, or contact the repository maintainers through the security channel listed on the organization profile.
 
 When reporting, include:
 
