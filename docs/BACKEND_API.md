@@ -1,112 +1,152 @@
 # Backend API Contract
 
-This document defines the HTTP contract that a backend must implement to work with N2N Post2Site. The MCP server connects to this contract through `CONTENT_API_BASE_URL` and `CONTENT_API_KEY`.
+This document defines the HTTP contract expected by n2n-post2site. All endpoints are relative to `CONTENT_API_BASE_URL`, for example `https://example.com/api/v1/mcp`.
 
-## Required endpoints
+The backend handles storage, validation, preview rendering, publication, and host-specific content fields. n2n-post2site only forwards MCP tool calls to this API.
 
-All endpoints are relative to `CONTENT_API_BASE_URL`.
+## Authentication
+
+Every request sends:
 
 ```http
-GET    /capabilities
-GET    /scopes/{content_scope}
-GET    /posts
-POST   /posts
-GET    /posts/{id_or_slug}
-PATCH  /posts/{id_or_slug}
-POST   /posts/{id_or_slug}/publish
+X-API-KEY: <CONTENT_API_KEY>
+Accept: application/json
+Content-Type: application/json
 ```
 
-## `GET /capabilities`
+## Required Endpoints
 
-Returns the publishing contract for AI clients, including:
+Discovery:
 
-- Supported content types.
-- Supported statuses.
-- Supported locales.
-- Single-locale input fields.
-- `content_scope` rules (`content.content_scope`: format, `kinds`, `examples`, `required_for_types`).
-- Available scopes (`scopes`).
-- Safety boundaries.
+```http
+GET /capabilities
+GET /site-context
+GET /editorial-policy
+```
 
-The MCP server calls this endpoint before every create or update operation.
+Inventory:
 
-## `GET /scopes/{content_scope}`
+```http
+GET  /inventory/resources
+GET  /inventory/resources/{target_identifier}
+GET  /inventory/stats
+POST /inventory/duplicates
+```
 
-Returns controlled context for a `content_scope` before drafting scoped content.
+Drafts:
 
-The body is `content_scope` plus host-defined controlled fields. Common fields:
+```http
+POST  /working-drafts/validate
+GET   /drafts
+POST  /drafts
+GET   /drafts/{draft_id}
+PATCH /drafts/{draft_id}
+POST  /drafts/{draft_id}/validate
+GET   /drafts/{draft_id}/preview
+POST  /drafts/{draft_id}/publish
+```
 
-| Field | Description |
-| --- | --- |
-| `content_scope` | Confirms the valid scope. |
-| `canonical_url` | Page for deeper reading, links, and citations. |
-| `docs_url` | Docs or guide index to prefer for tutorials. |
-| `summary` | Controlled summary. |
-| `key_points` | Controlled facts the assistant may rely on. |
-| `do_not_claim` | Claims the assistant must not make. |
+Assets:
 
-## `GET /posts`
+```http
+POST /assets
+```
 
-Returns a list of existing posts. Supports filtering by `status`, `type`, `content_scope`, and a search query `q`.
+## Content Payload Boundary
 
-For automated internal linking and search, each post in the list should include:
+The core contract treats `content_payload` as a host-defined JSON object. The MCP bridge does not interpret fields such as `type`, `topics`, `geo_tags`, `seo_keywords`, `locales`, `thumbnail_asset_id`, or evidence records.
 
-| Field | Description |
-| --- | --- |
-| `id` | Unique identifier. |
-| `title` | Post title. |
-| `slug` | Unique URL slug. |
-| `link` | Required for AI auto-linking. Absolute public URL of the published post on the live website, so AI clients do not guess paths. |
+The backend must describe host fields through `GET /capabilities` and validate them through working draft, draft, and publish validation.
 
-## `GET /posts/{id_or_slug}`
+Server-managed fields must not be accepted inside `content_payload`, including:
 
-Returns a single post by ID or slug. The MCP server calls this before updating a post or completing missing locales.
+- `status`
+- `published_at`
+- `author`
+- host markers such as `content_origin`, `managed_by`, or `authoring_source`
 
-## `POST /posts` and `PATCH /posts/{id_or_slug}`
+## Draft Creation
 
-Create and update calls use one locale per request.
-
-### Payload
+```http
+POST /drafts
+```
 
 ```json
 {
-  "slug": "example-product-guide",
-  "type": "guide",
-  "content_scope": "product:example-product",
-  "locale": "en",
-  "title": "How to Use Example Product",
-  "excerpt": "A short guide to using the example product.",
-  "content": "## Overview\n\nMarkdown content..."
+  "mode": "create",
+  "target_identifier": "example-guide",
+  "content_payload": {
+    "host_field": "host-defined value"
+  },
+  "client_metadata": {}
 }
 ```
 
-### Field rules
+The response should include at least:
 
-- `title` is plain text.
-- `excerpt` is plain text.
-- `content` is Markdown. Inline HTML is allowed when useful. Full HTML documents with `<html>`, `<head>`, or `<body>` are not allowed.
-- `content_scope` is an optional `kind:key` value. The backend requires it for the content types listed in `capabilities.content.content_scope.required_for_types` and prohibits it for all other types.
-- Create and update payloads must not accept `status`, `published_at`, `user_id`, or `author`.
-- Publishing state changes only through `POST /posts/{id_or_slug}/publish`.
+```json
+{
+  "draft_id": "draft_01...",
+  "mode": "create",
+  "target_identifier": "example-guide",
+  "status": "draft",
+  "content_payload": {},
+  "validation_state": {}
+}
+```
 
-### Response conventions
+## Asset Upload
 
-Backends may return `missing_locales` and `next_actions` after create, update, or publish. The MCP server will add missing language versions with additional update calls instead of asking the backend to auto-translate.
+```http
+POST /assets
+```
 
-## `POST /posts/{id_or_slug}/publish`
+```json
+{
+  "draft_id": "draft_01...",
+  "purpose": "blog_thumbnail",
+  "filename": "cover.webp",
+  "content_type": "image/webp",
+  "data_base64": "...",
+  "metadata": {}
+}
+```
 
-Publishes an existing draft. Publishing state is managed exclusively through this endpoint, not through create or update payloads.
+Only selected assets should be uploaded. Unselected image candidates should remain local to the AI/chat workflow.
 
-## Draft-specific MCP tools
+## Publish
 
-`n2n_list_drafts` and `n2n_update_draft` do not require extra backend endpoints:
+```http
+POST /drafts/{draft_id}/publish
+```
 
-- `n2n_list_drafts` calls `GET /posts` with `status=draft`.
-- `n2n_update_draft` calls `GET /posts/{id_or_slug}` first and refuses to continue unless the returned post has `status: "draft"`, then calls `PATCH /posts/{id_or_slug}`.
+```json
+{
+  "publish_confirmed": true,
+  "acknowledged_warnings": []
+}
+```
 
-## Security requirements
+Publish must be explicit and separate from draft create/update. The backend should validate publish blockers before writing the host public resource.
 
-- Use a site-scoped API key with the minimum permissions needed.
-- Sanitize backend errors before returning them to the MCP client.
-- Do not expose `user_id`, `author`, `published_at`, or other server-managed fields in create or update payloads.
-- Keep path mapping and field mapping in the backend adapter, not in MCP client configuration.
+## Error Shape
+
+Backends should return sanitized JSON errors. A common shape is:
+
+```json
+{
+  "error": {
+    "code": "validation_failed",
+    "message": "Selected content is invalid.",
+    "field": "content_payload.locales.en.title"
+  }
+}
+```
+
+## Security Requirements
+
+- Do not expose delete tools.
+- Do not expose raw database or filesystem access.
+- Do not expose shell or deployment operations.
+- Keep path mapping and host field mapping in the backend adapter.
+- Sanitize server errors before returning them to the MCP client.

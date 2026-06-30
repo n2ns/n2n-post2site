@@ -13,7 +13,7 @@ describe('MCP server wiring', () => {
     vi.restoreAllMocks();
   });
 
-  it('registers all expected tools through createServer', () => {
+  it('registers the MCP publishing workflow tools through createServer', () => {
     const toolSpy = vi.spyOn(McpServer.prototype, 'tool');
 
     const server = createServer(config);
@@ -22,15 +22,22 @@ describe('MCP server wiring', () => {
     expect(server).toBeInstanceOf(McpServer);
     expect(toolNames).toEqual([
       'n2n_get_capabilities',
-      'n2n_list_posts',
+      'n2n_get_site_context',
+      'n2n_get_editorial_policy',
+      'n2n_list_inventory',
+      'n2n_get_inventory_resource',
+      'n2n_get_inventory_stats',
+      'n2n_check_duplicates',
+      'n2n_validate_working_draft',
       'n2n_list_drafts',
-      'n2n_get_post',
-      'n2n_get_scope_context',
-      'n2n_create_post',
-      'n2n_update_post',
+      'n2n_create_draft',
+      'n2n_get_draft',
       'n2n_update_draft',
-      'n2n_publish_post',
+      'n2n_validate_draft',
+      'n2n_preview_draft',
+      'n2n_upload_asset',
+      'n2n_publish_draft',
     ]);
-    expect(toolSpy).toHaveBeenCalledTimes(9);
+    expect(toolSpy).toHaveBeenCalledTimes(16);
   });
 });

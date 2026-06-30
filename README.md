@@ -4,98 +4,47 @@
 
 # n2n-post2site
 
-AI-assisted content publishing MCP server for blogs, guides, and other categorized content.
+Local MCP bridge for AI-assisted website publishing.
 
-[![npm version](https://img.shields.io/npm/v/n2n-post2site)](https://www.npmjs.com/package/n2n-post2site)
-[![npm total downloads](https://img.shields.io/npm/dt/n2n-post2site)](https://www.npmjs.com/package/n2n-post2site)
-[![license](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
-[![MCP Protocol](https://img.shields.io/badge/MCP-Protocol-blue)](https://modelcontextprotocol.io)
-[![node version](https://img.shields.io/node/v/n2n-post2site)](https://nodejs.org)
+n2n-post2site lets an AI IDE client talk to a protected website content API without exposing a database, filesystem, shell, deployment process, payments, or account administration. It is a thin stdio MCP server: validate tool input, map it to HTTP, and return the backend response.
 
----
-
-> **Draft with AI. Publish with intent.**
-
-n2n-post2site is an open-source Model Context Protocol (MCP) server that lets an AI assistant draft, edit, review, and publish website content through a narrow Content Publishing API Contract. It is a local MCP bridge between your IDE assistant and your website content API — intentionally small, with no database access, shell access, deployment access, payment access, or user administration access.
-
-## 📚 Contents
-
-- [What is n2n-post2site?](#-what-is-n2n-post2site)
-- [Architecture](#️-architecture)
-- [Publishing model](#-publishing-model)
-- [Quick start](#-quick-start)
-- [Backend API contract](#-backend-api-contract)
-- [MCP tools](#️-mcp-tools)
-- [Content format](#-content-format)
-- [Security and governance notes](#-security-and-governance-notes)
-- [Related docs](#-related-docs)
-
-## 💡 What is n2n-post2site?
-
-n2n-post2site gives AI coding assistants a structured path to draft and publish website content without exposing the database, file system, or deployment layer. Your backend implements the Content Publishing API Contract; the MCP server forwards AI tool calls to it.
-
-Use it for blog posts, product guides, technical notes, release notes, and localized article drafts. It is not a CMS — no admin panel, no storage backend, no image uploads (v1), no deployment workflow.
-
-## 🏗️ Architecture
+## Architecture
 
 ```text
-┌─────────────────────────────┐
-│     AI coding assistant     │
-│   (Claude, Cursor, VS Code) │
-└──────────────┬──────────────┘
-               │ MCP tool calls (stdio)
-               ▼
-┌─────────────────────────────┐
-│        n2n-post2site        │
-│     MCP server · 9 tools    │
-│  validate → map → HTTP call │
-└──────────────┬──────────────┘
-               │ HTTPS + site-scoped API key
-               ▼
-┌─────────────────────────────┐
-│   Your backend content API  │
-│  (Content Publishing API    │
-│   Contract)                 │
-│  owns storage, auth, policy │
-└─────────────────────────────┘
+AI IDE client
+  -> MCP stdio
+n2n-post2site
+  -> HTTPS + X-API-KEY
+website content API
+  -> host adapter handles storage, policy, preview, publish
 ```
 
-- **The MCP server is a thin bridge**: it validates tool input, maps it to the contract, and forwards HTTP calls. It owns no persistence, authorization, or review policy.
-- **The backend owns the truth**: storage, publishing state, and access control all live behind the contract.
-- **One server, one site**: each MCP instance is bound to a single website through `CONTENT_API_BASE_URL` and `CONTENT_API_KEY`.
+For Laravel sites, [`n2ns/laravel-post2site`](https://github.com/n2ns/laravel-post2site) is the first-party backend package for this contract.
 
-See [Architecture](./docs/ARCHITECTURE.md) for the full layer breakdown.
+## Workflow
 
-## 📰 Publishing model
+The intended authoring loop is:
 
-n2n-post2site classifies content with an optional `content_scope`:
+1. Discover the site contract with `n2n_get_capabilities`, `n2n_get_site_context`, and `n2n_get_editorial_policy`.
+2. Inspect existing content with `n2n_list_inventory`, `n2n_get_inventory_stats`, and `n2n_check_duplicates`.
+3. Draft locally in the chat/IDE. Use `n2n_validate_working_draft` for non-persistent backend validation.
+4. After the draft is confirmed for remote saving, call `n2n_create_draft`.
+5. Upload only the selected image with `n2n_upload_asset`, then update the draft if needed.
+6. Validate and preview with `n2n_validate_draft` and `n2n_preview_draft`.
+7. Publish only after explicit publish confirmation with `n2n_publish_draft`.
 
-| Content | `content_scope` | Example |
-|---|---|---|
-| Unscoped | omitted or empty | technical notes, announcements, changelogs |
-| Scoped | `kind:key` | `product:example-product` |
+The MCP server does not define blog fields such as `type`, `topics`, `geo_tags`, `seo_keywords`, or `locales`. Those live inside the host-declared `content_payload` object and are validated by the backend.
 
-The backend defines which `content_scope` kinds are valid and which content types require one. Scoped content should only be written after the assistant reads controlled context with `n2n_get_scope_context`.
+## Quick Start
 
-The assistant should follow this workflow:
+Requirements:
 
-1. Call `n2n_get_capabilities`.
-2. Search existing content with `n2n_list_posts`.
-3. For scoped content, call `n2n_get_scope_context`.
-4. Create or update one locale at a time.
-5. Resume unfinished work with `n2n_list_drafts`, `n2n_get_post`, and `n2n_update_draft`.
-6. Review the draft.
-7. Publish only through `n2n_publish_post`.
+- Node.js 22+
+- An MCP-capable IDE/client
+- A backend implementing the Post2Site publishing HTTP contract
+- A content API key
 
-## 🚀 Quick start
-
-**Requirements**: Node.js 22+, an MCP-capable client, a site-scoped API key, and a backend that implements the [Content Publishing API Contract](./docs/BACKEND_API.md).
-
-> **Just trying it out?** Run the [mock backend](./examples/mock-backend/) for a zero-dependency local server that implements the full contract — no website required.
-
-### 1. Configure your MCP client
-
-Using the npm package:
+Using npm:
 
 ```json
 {
@@ -129,80 +78,70 @@ Using a local checkout:
 }
 ```
 
-- `CONTENT_API_BASE_URL`: base URL of your protected content API. Keep path and field mapping in the backend adapter.
-- `CONTENT_API_KEY`: site-scoped API key. Do not put it in prompts, article content, or screenshots.
+`CONTENT_API_BASE_URL` should point at the protected publishing API base, for example `https://your-site.example/api/v1/mcp`. Keep the API key out of prompts, screenshots, and article content.
 
-Bind one server instance to exactly one website.
+## MCP Tools
 
-## 🔗 Backend API contract
+Discovery:
 
-n2n-post2site connects to any backend that implements the Content Publishing API Contract. The contract defines the required endpoints, payload rules, and security requirements.
+- `n2n_get_capabilities`
+- `n2n_get_site_context`
+- `n2n_get_editorial_policy`
 
-For Laravel sites, [`n2ns/laravel-post2site`](https://github.com/n2ns/laravel-post2site)
-is the first-party backend package for this contract.
+Inventory:
 
-See **[Backend API Contract](./docs/BACKEND_API.md)** for the full specification.
+- `n2n_list_inventory`
+- `n2n_get_inventory_resource`
+- `n2n_get_inventory_stats`
+- `n2n_check_duplicates`
 
-## 🛠️ MCP tools
+Drafting:
 
-- **Discovery** (`n2n_get_capabilities`, `n2n_list_posts`, `n2n_get_scope_context`): read backend capabilities, list existing posts, and load scope context before drafting.
-- **Drafting** (`n2n_create_post`, `n2n_update_post`, `n2n_update_draft`, `n2n_list_drafts`, `n2n_get_post`): create posts, update posts one locale at a time, and resume unpublished drafts.
-- **Publishing** (`n2n_publish_post`): publish an approved draft through an explicit publish step.
+- `n2n_validate_working_draft`
+- `n2n_list_drafts`
+- `n2n_create_draft`
+- `n2n_get_draft`
+- `n2n_update_draft`
+- `n2n_validate_draft`
+- `n2n_preview_draft`
 
-See [Tools reference](./docs/TOOLS_REFERENCE.md) for parameter schemas and call examples.
+Assets and publishing:
 
-## 📝 Content format
+- `n2n_upload_asset`
+- `n2n_publish_draft`
 
-- Submit one locale per create or update call.
-- Use Markdown for `content`.
-- Use fenced code blocks for commands, JSON, YAML, and code examples.
-- Use Markdown image syntax for images.
-- Always include descriptive image alt text.
-- Reference public image URLs or existing site paths.
-- This MCP does not upload images in v1.
+See [Tools Reference](./docs/TOOLS_REFERENCE.md) for input examples.
 
-Image example:
-
-```md
-![Product dashboard showing content status](/images/guides/content-status.png)
-```
-
-## 🔐 Security and governance notes
+## Security Boundaries
 
 n2n-post2site should not expose:
 
 - Delete operations.
-- Product configuration writes.
-- Pricing plan writes.
-- User administration.
-- Payment or subscription administration.
-- Database queries.
-- Log access.
+- Direct database queries.
+- Filesystem writes.
 - Shell commands.
 - Deployment or server operations.
+- Product, pricing, payment, subscription, or account administration.
+- Server-managed lifecycle fields such as `published_at`, `author`, or host markers.
 
-Recommended backend behavior:
+The backend is responsible for authentication, validation, preview rendering, publication, audit rules, and server-managed fields.
 
-- Sanitize backend errors before returning them to the AI client.
-- Use a site-scoped API key with the minimum permissions needed.
-- Create drafts by default.
-- Keep create/update and publish separate.
-- Set `published_at` on the backend, not from MCP input.
+## Development
 
-## 📖 Related docs
+```bash
+npm run build
+npm test
+npm run check
+```
 
-- **[Backend API Contract](./docs/BACKEND_API.md)**: Endpoints, payload rules, and security requirements for backend implementors.
-- **[Architecture](./docs/ARCHITECTURE.md)**: Runtime layers, module boundaries, and request flow in the MCP server.
-- **[Tools reference](./docs/TOOLS_REFERENCE.md)**: MCP tool parameter schemas and call examples.
-- **[Roadmap](./ROADMAP.md)**: Planned features and what's coming next.
-- **[Changelog](./CHANGELOG.md)**: Version history and release notes.
-- **[Contributing](./CONTRIBUTING.md)**: How to report issues and contribute.
-- **[Security](./SECURITY.md)**: How to report vulnerabilities.
+## Related Docs
 
-## 📄 License
+- [Backend API Contract](./docs/BACKEND_API.md)
+- [Architecture](./docs/ARCHITECTURE.md)
+- [Tools Reference](./docs/TOOLS_REFERENCE.md)
+- [Changelog](./CHANGELOG.md)
+- [Security](./SECURITY.md)
 
-This project is licensed under the [MIT License](./LICENSE).
+## License
 
----
-
-Built by [N2NS Lab](https://n2ns.com), an open-source lab for practical AI developer tools.
+MIT

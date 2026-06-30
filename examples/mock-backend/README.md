@@ -1,8 +1,6 @@
-# Mock content backend
+# Mock Post2Site Backend
 
-A minimal, zero-dependency reference backend that implements the
-[Content Publishing API Contract](../../docs/BACKEND_API.md). Use it to try
-n2n-post2site end to end without wiring up a real website — **for local testing only**.
+A minimal zero-dependency backend implementing the Post2Site MCP publishing HTTP contract. It stores inventory, drafts, and assets in memory, so all data resets on restart.
 
 ## Run
 
@@ -10,9 +8,7 @@ n2n-post2site end to end without wiring up a real website — **for local testin
 API_KEY=demo-key PORT=8787 node server.mjs
 ```
 
-It stores posts in memory (reset on restart) and seeds one published note.
-
-## Point the MCP server at it
+## Configure n2n-post2site
 
 ```json
 {
@@ -29,14 +25,12 @@ It stores posts in memory (reset on restart) and seeds one published note.
 }
 ```
 
-Then ask your assistant to call `n2n_get_capabilities` — it should return the
-mock contract, after which you can list, draft, and publish posts.
+## Demonstrates
 
-## What it demonstrates
-
-- API-key auth via `X-API-KEY` / `Authorization: Bearer`.
-- All seven contract endpoints.
-- `content_scope` rules: `guide` requires a scope, `note` forbids one.
-- Rejection of server-managed fields (`status`, `published_at`, `user_id`, `author`).
-- Drafts created via `POST /posts`; publishing only via `POST /posts/{id}/publish`.
-- `missing_locales` returned after create/update.
+- API-key auth through `X-API-KEY`.
+- Discovery endpoints.
+- Inventory and duplicate checks.
+- Non-persistent working draft validation.
+- Server draft create, update, validate, preview, and publish.
+- Selected asset upload.
+- Explicit publish confirmation through `publish_confirmed`.

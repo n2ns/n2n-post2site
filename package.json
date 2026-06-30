@@ -1,6 +1,6 @@
 {
   "name": "n2n-post2site",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "AI-assisted content publishing MCP server for blogs, guides, and categorized content.",
   "repository": {
     "type": "git",

@@ -1,79 +1,42 @@
 # N2N Post2Site Roadmap
 
-This document describes the planned direction for N2N Post2Site. It reflects the current state of the project and the areas where the most useful work can happen next.
+## Current State - v0.2.x
 
----
+The v0.2 series aligns n2n-post2site with the Post2Site MCP publishing workflow:
 
-## Current State — v0.1.x
+- Discover host capabilities, site context, and editorial policy.
+- Inspect existing inventory and topic coverage.
+- Check duplicate risk before saving.
+- Validate local-only working drafts without persistence.
+- Create, update, validate, and preview server drafts.
+- Upload only selected assets.
+- Publish with explicit publish confirmation.
 
-The v0.1 series establishes the core publishing workflow:
+The MCP client remains intentionally thin. Host content fields live inside `content_payload`; the backend remains responsible for validation, storage, preview, and publishing.
 
-- Read backend capabilities before drafting content.
-- Search existing posts before creating new ones.
-- Read controlled scope context before drafting scoped content.
-- Create and update drafts one locale at a time.
-- Publish through a separate, explicit tool call.
+## Next - Client Ergonomics
 
-The MCP client is intentionally thin. It adds no local state and no content logic. The backend remains responsible for authentication, validation, storage, preview, and publishing rules.
+- Add richer tool descriptions for common AI IDE flows.
+- Add examples for Antigravity, Claude Code, and Codex MCP configuration.
+- Add a short "write article" prompt recipe that uses the two-confirmation workflow.
 
----
+## Contract Reference
 
-## v0.2 — Schema and Discovery
+- Publish an OpenAPI-style reference for the HTTP endpoints.
+- Add backend conformance tests that any implementation can run.
+- Keep `n2ns/laravel-post2site` as the first-party Laravel backend package.
 
-**Goal**: remove hardcoded assumptions, make the client adapt to what the backend reports.
+## Assets
 
-- **Capability-driven client hints**: continue improving how assistants use backend-reported locales, content types, scope rules, and field limits. The current client already treats `type` and `locale` as backend-owned free strings.
-- **Post list pagination**: add `page` (or a cursor field) alongside the existing `per_page` filter so assistants can page through large content archives.
-- **Date range filter**: add `created_after` and `updated_after` filters to `n2n_list_posts` for discovering recent or recently changed content.
-
----
-
-## v0.3 — Image and Asset Support
-
-**Goal**: allow AI assistants to include images in articles without requiring manual uploads.
-
-- **Image upload tool** (`n2n_upload_image`): accept a local file path or public URL and return a site-hosted image path the assistant can embed in article content. This is explicitly deferred from v0.1.
-- **Thumbnail support**: wire the existing `thumbnail` field in the create/update schema to an uploaded image path or public URL.
-- Content format guidance: document inline image syntax and alt text requirements clearly.
-
----
-
-## v0.4 — Backend Contract Reference
-
-**Goal**: make it practical for teams to implement the Content Publishing API Contract on their own backend.
-
-- **OpenAPI specification**: publish a machine-readable spec for the endpoints the MCP client calls (`GET /capabilities`, `GET /scopes/{content_scope}`, `GET /posts`, `POST /posts`, `GET /posts/{id_or_slug}`, `PATCH /posts/{id_or_slug}`, `POST /posts/{id_or_slug}/publish`). This gives backend authors a clear target to implement against.
-- **Reference backend**: provide a minimal reference implementation or adapter package for a common web framework. This would implement the required endpoints without requiring teams to interpret the README contract section by hand.
-- **Contract conformance tests**: a test suite that any backend implementation can run to verify it satisfies the contract.
-
----
-
-## v0.5 — Draft Management
-
-**Goal**: let assistants clean up draft content they created.
-
-- **Delete draft tool** (`n2n_delete_draft`): allow deletion of unpublished drafts only. Published posts remain outside the MCP scope — deletion of live content requires backend-side admin controls.
-- **Richer draft metadata**: extend the existing `n2n_list_drafts` workflow with clearer next actions, stale-draft signals, and review status fields when backends expose them.
-
----
+- Improve asset metadata examples for alt text, provenance, size, and selected-image status.
+- Keep unselected image candidates outside the backend contract.
 
 ## Out of Scope
 
-These will not be added to N2N Post2Site:
-
-- CMS admin panel or content management UI.
-- Database access or direct storage operations.
-- User or team management.
-- Pricing, payment, or subscription management.
-- Deployment or server operations.
-- Shell access.
-- Multi-site selection inside tool arguments — use one MCP server configuration per site.
-
----
-
-## Version Policy
-
-- **v0.x**: iterative development; minor API surface changes possible between minor versions.
-- **v1.0**: stable API contract; breaking changes require a major version bump.
-
-Until v1.0, the Content Publishing API Contract (the backend endpoint signatures) may receive additive changes. Backends should treat unknown fields in requests as optional and return unknown fields in responses without error.
+- CMS admin UI.
+- Database access.
+- Filesystem write tools.
+- Shell or deployment tools.
+- Account administration.
+- Payment, subscription, product, or pricing administration.
+- Multi-site selection inside tool arguments. Use one MCP server config per site.

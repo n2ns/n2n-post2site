@@ -12,7 +12,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
 
   if (!apiKey) {
-    throw new Error('CONTENT_API_KEY is required. Pass a site-scoped content API token as an environment variable.');
+    throw new Error('CONTENT_API_KEY is required. Pass a content API key as an environment variable.');
   }
 
   return { apiBaseUrl, apiKey };

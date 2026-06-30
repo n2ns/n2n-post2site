@@ -1,113 +1,106 @@
 # N2N Post2Site Architecture
 
-This document describes the current architecture of `n2n-post2site`. The goal is to keep boundaries clear, preserve interface compatibility, and give future changes stable extension points.
+n2n-post2site is a local stdio MCP server. It is intentionally a thin bridge between an AI IDE client and a protected website publishing API.
 
-## 1. What it is
+## Layers
 
-`n2n-post2site` is an MCP server. It:
+### Entry
 
-- Loads environment configuration and creates an MCP server instance.
-- Exposes nine content publishing tools to MCP clients.
-- Translates tool arguments into HTTP calls against a backend content API.
-- Wraps backend responses into MCP-displayable text.
+`src/index.ts`
 
-It does not own persistence, authorization, review policy, or content-ranking decisions. Those belong to the backend API provider.
+- Loads `CONTENT_API_BASE_URL` and `CONTENT_API_KEY`.
+- Creates the MCP server.
+- Connects through `StdioServerTransport`.
 
-## 2. Layers
+### Configuration
 
-### 2.1 Entry (`src/index.ts`)
+`src/config.ts`
 
-- Creates the server via `createServer(loadConfig())`.
-- Connects to the MCP client over `StdioServerTransport`.
-- Owns only process lifecycle and failure output.
+- Requires `CONTENT_API_BASE_URL`.
+- Requires `CONTENT_API_KEY`.
+- Removes trailing slashes from the base URL.
 
-### 2.2 Configuration (`src/config.ts`)
+### Server Assembly
 
-- Reads `CONTENT_API_BASE_URL` and `CONTENT_API_KEY`.
-- Fails fast on missing values.
-- Normalizes trailing slashes on `CONTENT_API_BASE_URL`.
+`src/server.ts`
 
-### 2.3 Assembly (`src/server.ts`)
-
-Build-and-register only:
-
-1. Construct `ContentClient`.
-2. Create `McpServer`.
-3. Register the nine tools, in order:
+Registers 16 tools:
 
 - `n2n_get_capabilities`
-- `n2n_list_posts`
+- `n2n_get_site_context`
+- `n2n_get_editorial_policy`
+- `n2n_list_inventory`
+- `n2n_get_inventory_resource`
+- `n2n_get_inventory_stats`
+- `n2n_check_duplicates`
+- `n2n_validate_working_draft`
 - `n2n_list_drafts`
-- `n2n_get_post`
-- `n2n_get_scope_context`
-- `n2n_create_post`
-- `n2n_update_post`
+- `n2n_create_draft`
+- `n2n_get_draft`
 - `n2n_update_draft`
-- `n2n_publish_post`
+- `n2n_validate_draft`
+- `n2n_preview_draft`
+- `n2n_upload_asset`
+- `n2n_publish_draft`
 
-### 2.4 Tools (`src/tools/*.ts`)
+### Tools
 
-Each file is one MCP tool:
+`src/tools/*.ts`
 
-- Validate input (Zod schema + lightweight assertions).
-- Call the matching `ContentClient` method.
-- Return a uniform `text` result.
+Tools only:
 
-Tools do not deal with low-level HTTP, headers, JSON parsing, or path building.
+- Validate input with Zod.
+- Call a `ContentClient` method.
+- Wrap the backend response with `createTextResult`.
 
-### 2.5 Transport and client
+They do not handle host content rules, storage, publish policy, or review logic.
 
-- `src/transport/http.ts` — the `HttpTransport` interface and the default `FetchHttpTransport` wrapping `fetch`; handles response parsing (JSON/text) and status passthrough.
-- `src/content-client.ts` — builds paths and HTTP methods, injects auth headers (`X-API-KEY` / `Authorization`), turns non-2xx responses into errors, assembles list and route parameters, and implements the `updateDraft` flow:
-  1. `GET /posts/{id_or_slug}`
-  2. require `status === 'draft'`
-  3. then `PATCH /posts/{id_or_slug}`
+### Client and Transport
 
-### 2.6 Schemas and validation (`src/schemas/blog-post.ts`)
+`src/content-client.ts`
 
-- Zod schemas define every tool's input.
-- `type` and `locale` are free strings; the backend is the source of truth for supported values (discoverable via `n2n_get_capabilities`).
-- `assertContentScopeFormat` performs a contract-level format check only: when present, `content_scope` must be `kind:key`. Whether a scope is *required* or *prohibited* for a given type is decided and enforced by the backend (`capabilities.content.content_scope.required_for_types`).
+- Builds paths for the Post2Site publishing HTTP contract.
+- Sends `X-API-KEY`.
+- Converts non-2xx responses to readable errors.
 
-### 2.7 Output (`src/result.ts`)
+`src/transport/http.ts`
 
-- `createTextResult` wraps any backend payload into MCP `content: [{ type: 'text', text: ... }]`, keeping all tools' return shape consistent.
+- Wraps `fetch`.
+- Parses JSON or text responses.
 
-## 3. Request flow
+### Schemas
 
-Typical call (`n2n_create_post`):
+`src/schemas/blog-post.ts`
 
-1. The tool receives arguments.
-2. Zod schema validation + assertions.
-3. `ContentClient.createPost` is called.
-4. `ContentClient` builds the request and sends it via `HttpTransport.request`.
-5. The response body is parsed and returned.
-6. The tool wraps it with `createTextResult` for the MCP client.
+Defines MCP input shapes. `content_payload` is intentionally `record<string, unknown>` because host apps define fields through `/capabilities` and validate them on the backend.
 
-## 4. Key invariants
+## Request Flow
 
-- Tool contract is stable (nine tools, names, argument semantics).
-- Backend contract is stable (see `docs/BACKEND_API.md`).
-- CLI/deploy entry is stable (`bin` points to `dist/index.js`).
-- Fail-fast error behavior: missing config or invalid arguments error immediately.
+Typical publish flow:
 
-## 5. Test boundaries
+1. AI calls discovery and inventory tools.
+2. AI drafts locally in the chat/IDE.
+3. AI calls `n2n_validate_working_draft` for non-persistent checks.
+4. Draft is confirmed for remote saving.
+5. AI calls `n2n_create_draft`.
+6. Image is selected; AI calls `n2n_upload_asset`.
+7. AI calls `n2n_update_draft` if the selected asset changes payload.
+8. AI calls `n2n_validate_draft` and `n2n_preview_draft`.
+9. Publish is explicitly confirmed.
+10. AI calls `n2n_publish_draft`.
 
-- `tests/server.test.ts` — all nine tools register.
-- `tests/transport.test.ts` / `tests/client.test.ts` — request-layer behavior of `FetchHttpTransport` and `ContentClient`.
-- `tests/schema.test.ts` — input schemas and `content_scope` format checks.
+## Invariants
 
-## 6. Limits and future direction
+- No delete tools.
+- No direct database, filesystem, shell, or deployment access.
+- No backend-specific content fields in MCP core schemas.
+- No server-managed lifecycle fields in MCP payloads.
+- Publish is explicit and separate from draft create/update.
+- The backend is the source of truth for validation, preview, publish, and public URLs.
 
-The design is layered but intentionally a lightweight monolith:
+## Tests
 
-- No runtime retry, idempotency, rate limiting, or backoff.
-- A single error mode (errors are thrown uniformly).
-- Tool capabilities are documented statically.
-
-Possible extensions:
-
-- An `errors.ts` with a unified API error model.
-- Strategic retry / idempotency in the client layer.
-- A service layer (e.g. `PostService`) for richer flows.
-- End-to-end contract tests covering error response shapes.
+- `tests/server.test.ts`: tool registration.
+- `tests/client.test.ts`: HTTP path, header, and payload mapping.
+- `tests/schema.test.ts`: MCP input schema behavior.
+- `tests/transport.test.ts`: transport parsing and injected transport behavior.

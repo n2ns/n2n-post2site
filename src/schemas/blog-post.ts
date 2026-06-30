@@ -1,63 +1,102 @@
 import { z } from 'zod';
 
-export const statusSchema = z.enum(['draft', 'published']);
-export const capabilitiesSchema = z.object({});
+export const emptySchema = z.object({});
+export const draftModeSchema = z.enum(['create', 'update_existing']);
+export const validationModeSchema = z.enum(['draft', 'publish']);
 
-const CONTENT_SCOPE_FORMAT = /^[a-z][a-z0-9_-]*:[a-z0-9][a-z0-9_-]*$/;
+const contentPayloadSchema = z.record(z.unknown()).describe('Host-defined JSON object. Read n2n_get_capabilities before shaping it.');
+const clientMetadataSchema = z.record(z.unknown()).optional().describe('Optional non-secret client metadata for backend attribution.');
 
-export const listPostsSchema = z.object({
-  status: statusSchema.optional().describe('Filter by publication status.'),
-  type: z.string().optional().describe('Filter by content type. Call n2n_get_capabilities for supported types.'),
-  content_scope: z.string().optional().describe('Filter by content_scope (kind:key). Use an empty string to list unscoped posts when the backend supports it.'),
-  q: z.string().optional().describe('Search query across title and content.'),
-  per_page: z.number().int().min(1).max(100).optional().describe('Page size. Defaults to the server value.'),
+export const listInventorySchema = z.object({
+  target_identifier: z.string().optional().describe('Optional host target identifier, usually a slug.'),
+  status: z.string().optional().describe('Optional host-defined status filter.'),
+  type: z.string().optional().describe('Optional host-defined content type filter.'),
+  topic: z.string().optional().describe('Optional host-defined topic filter.'),
+  q: z.string().optional().describe('Optional search query.'),
+  per_page: z.number().int().min(1).max(100).optional().describe('Maximum result count.'),
 });
 
-export const listDraftsSchema = listPostsSchema.omit({ status: true });
-
-export const getPostSchema = z.object({
-  id_or_slug: z.string().min(1).describe('Numeric ID or slug of the article.'),
+export const getInventoryResourceSchema = z.object({
+  target_identifier: z.string().min(1).describe('Host target identifier, usually a slug.'),
 });
 
-export const scopeContextSchema = z.object({
-  content_scope: z.string().min(1).describe('Content scope in kind:key format, for example product:example. Read this before writing scoped content. Call n2n_get_capabilities for supported kinds.'),
+export const inventoryStatsSchema = z.object({
+  type: z.string().optional().describe('Optional host-defined type filter.'),
+  topic: z.string().optional().describe('Optional host-defined topic filter.'),
 });
 
-export const createPostSchema = z.object({
-  slug: z.string().min(1).describe('Globally unique URL slug.'),
-  type: z.string().optional().describe('Content type. Call n2n_get_capabilities for supported types. The backend applies its default when omitted.'),
-  content_scope: z.string().optional().describe('Optional kind:key categorization, for example product:example. The backend requires it for certain content types; call n2n_get_capabilities for supported kinds, examples, and which types require it.'),
-  locale: z.string().optional().describe('Single-locale code for this submission. Submit one locale per call. Call n2n_get_capabilities for supported locales. The backend applies its default when omitted.'),
-  title: z.string().min(1).describe('Plain text title for the selected locale. Do not use Markdown here.'),
-  excerpt: z.string().optional().describe('Plain text summary for the selected locale. No Markdown headings, tables, or images.'),
-  content: z.string().min(1).describe('Markdown article body for the selected locale. Markdown image syntax is allowed. Inline HTML is allowed when useful.'),
-  thumbnail: z.string().optional().describe('Optional public image path or URL for the article thumbnail.'),
+export const checkDuplicatesSchema = z.object({
+  mode: draftModeSchema.optional().describe('Authoring mode for duplicate checks.'),
+  target_identifier: z.string().optional().describe('Proposed host target identifier, usually a slug.'),
+  content_payload: contentPayloadSchema,
+  client_metadata: clientMetadataSchema,
 });
 
-export const updatePostSchema = createPostSchema.partial().extend({
-  id_or_slug: z.string().min(1).describe('Numeric ID or slug of the article to update.'),
+export const draftArticleSchema = z.object({
+  mode: draftModeSchema,
+  target_identifier: z.string().optional().describe('Host target identifier, usually a slug.'),
+  content_payload: contentPayloadSchema,
+  client_metadata: clientMetadataSchema,
 });
 
-export const updateDraftSchema = updatePostSchema;
+export const validateWorkingDraftSchema = z.object({
+  mode: validationModeSchema.optional().describe('Validation strictness. draft is lenient; publish applies publish blockers.'),
+  article: draftArticleSchema,
+});
 
-export const publishPostSchema = getPostSchema;
+export const listDraftsSchema = z.object({
+  status: z.string().optional().describe('Optional draft status filter, for example draft or published.'),
+  per_page: z.number().int().min(1).max(100).optional().describe('Maximum result count.'),
+});
 
-export type ListPostsInput = z.infer<typeof listPostsSchema>;
+export const createDraftSchema = draftArticleSchema;
+
+export const getDraftSchema = z.object({
+  draft_id: z.string().min(1).describe('Server draft id returned by n2n_create_draft or n2n_list_drafts.'),
+});
+
+export const updateDraftSchema = z.object({
+  draft_id: z.string().min(1).describe('Server draft id.'),
+  mode: draftModeSchema.optional(),
+  target_identifier: z.string().optional(),
+  content_payload: contentPayloadSchema.optional(),
+  client_metadata: clientMetadataSchema,
+});
+
+export const validateDraftSchema = z.object({
+  draft_id: z.string().min(1).describe('Server draft id.'),
+  mode: validationModeSchema.optional().describe('Validation strictness.'),
+});
+
+export const previewDraftSchema = getDraftSchema;
+
+export const uploadAssetSchema = z.object({
+  draft_id: z.string().optional().describe('Optional server draft id to bind the asset immediately.'),
+  purpose: z.string().min(1).describe('Host-declared asset purpose. Read n2n_get_capabilities first.'),
+  filename: z.string().min(1).describe('Original filename for the selected asset.'),
+  content_type: z.string().min(1).describe('MIME type, for example image/webp.'),
+  data_base64: z.string().min(1).describe('Base64 encoded selected asset bytes. Upload only the selected image.'),
+  metadata: z.record(z.unknown()).optional().describe('Optional asset metadata such as alt text or provenance.'),
+});
+
+export const publishDraftSchema = z.object({
+  draft_id: z.string().min(1).describe('Server draft id.'),
+  publish_confirmed: z.boolean().refine((value) => value === true, {
+    message: 'Publishing requires explicit publish confirmation.',
+  }),
+  acknowledged_warnings: z.array(z.string()).optional().describe('Warning codes explicitly acknowledged before publish.'),
+});
+
+export type ListInventoryInput = z.infer<typeof listInventorySchema>;
+export type GetInventoryResourceInput = z.infer<typeof getInventoryResourceSchema>;
+export type InventoryStatsInput = z.infer<typeof inventoryStatsSchema>;
+export type CheckDuplicatesInput = z.infer<typeof checkDuplicatesSchema>;
+export type ValidateWorkingDraftInput = z.infer<typeof validateWorkingDraftSchema>;
 export type ListDraftsInput = z.infer<typeof listDraftsSchema>;
-export type GetPostInput = z.infer<typeof getPostSchema>;
-export type ScopeContextInput = z.infer<typeof scopeContextSchema>;
-export type CreatePostInput = z.infer<typeof createPostSchema>;
-export type UpdatePostInput = z.infer<typeof updatePostSchema>;
+export type CreateDraftInput = z.infer<typeof createDraftSchema>;
+export type GetDraftInput = z.infer<typeof getDraftSchema>;
 export type UpdateDraftInput = z.infer<typeof updateDraftSchema>;
-export type PublishPostInput = z.infer<typeof publishPostSchema>;
-
-/**
- * Contract-level format check only. Whether a content_scope is required or
- * prohibited for a given type is decided by the backend (capabilities
- * .content.content_scope.required_for_types) and enforced server-side.
- */
-export function assertContentScopeFormat(contentScope?: string | null): void {
-  if (contentScope && !CONTENT_SCOPE_FORMAT.test(contentScope)) {
-    throw new Error('content_scope must use kind:key format, for example product:example.');
-  }
-}
+export type ValidateDraftInput = z.infer<typeof validateDraftSchema>;
+export type PreviewDraftInput = z.infer<typeof previewDraftSchema>;
+export type UploadAssetInput = z.infer<typeof uploadAssetSchema>;
+export type PublishDraftInput = z.infer<typeof publishDraftSchema>;

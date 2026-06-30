@@ -1,142 +1,219 @@
-# n2n-post2site tools reference
+# n2n-post2site Tools Reference
 
-This document describes the MCP tools provided by n2n-post2site. All tools connect to the backend at `CONTENT_API_BASE_URL` and authenticate with `CONTENT_API_KEY`.
+All tools call the backend at `CONTENT_API_BASE_URL` with `X-API-KEY: CONTENT_API_KEY`.
 
-See [Backend API Contract](./BACKEND_API.md) for the endpoint specification the backend must implement.
+## Discovery
 
-## `n2n_get_capabilities`
+### `n2n_get_capabilities`
 
-Read backend capabilities before creating or updating content.
+Read workflow flags, auth mode, safety boundaries, endpoints, and host-declared schema.
 
 ```json
 {}
 ```
 
-The backend returns supported content types, statuses, locales, input fields, `content_scope` rules, and safety boundaries. The MCP server calls this endpoint before every create or update operation.
+### `n2n_get_site_context`
 
-## `n2n_list_posts`
+Read host positioning, product/content context, supported locales, and URL patterns.
 
-Search existing posts before drafting new content.
+```json
+{}
+```
+
+### `n2n_get_editorial_policy`
+
+Read host editorial policy, evidence rules, CTA rules, prohibited claims, and publish blockers.
+
+```json
+{}
+```
+
+## Inventory
+
+### `n2n_list_inventory`
+
+List existing content before drafting.
+
+```json
+{
+  "type": "guide",
+  "topic": "visa-policy",
+  "q": "official website",
+  "per_page": 20
+}
+```
+
+### `n2n_get_inventory_resource`
+
+Read one existing content resource by host target identifier.
+
+```json
+{
+  "target_identifier": "vietnam-evisa-official-website-guide"
+}
+```
+
+### `n2n_get_inventory_stats`
+
+Read host inventory statistics such as topic counts.
+
+```json
+{
+  "type": "guide"
+}
+```
+
+### `n2n_check_duplicates`
+
+Check duplicate risk for a proposed article.
+
+```json
+{
+  "mode": "create",
+  "target_identifier": "example-guide",
+  "content_payload": {
+    "type": "guide",
+    "topics": ["visa-policy"]
+  }
+}
+```
+
+## Drafts
+
+### `n2n_validate_working_draft`
+
+Validate a local-only working draft without creating a server draft.
+
+```json
+{
+  "mode": "draft",
+  "article": {
+    "mode": "create",
+    "target_identifier": "example-guide",
+    "content_payload": {
+      "type": "guide",
+      "locales": {
+        "en": {
+          "title": "Example Guide",
+          "excerpt": "Short summary.",
+          "content": "Markdown body"
+        }
+      }
+    }
+  }
+}
+```
+
+### `n2n_list_drafts`
+
+List saved server drafts.
 
 ```json
 {
   "status": "draft",
-  "type": "guide",
-  "content_scope": "product:example-product",
-  "q": "setup guide",
   "per_page": 20
 }
 ```
 
-`status` is a filter only. Do not send `status` in create or update calls.
+### `n2n_create_draft`
 
-## `n2n_list_drafts`
-
-List unpublished drafts. This is a draft-only convenience tool over `GET /posts?status=draft`.
+Create a server draft after the working draft is confirmed for remote saving.
 
 ```json
 {
-  "type": "guide",
-  "content_scope": "product:example-product",
-  "q": "setup guide",
-  "per_page": 20
+  "mode": "create",
+  "target_identifier": "example-guide",
+  "content_payload": {
+    "type": "guide",
+    "thumbnail_asset_id": "asset_or_path",
+    "locales": {
+      "en": {
+        "title": "Example Guide",
+        "excerpt": "Short summary.",
+        "content": "Markdown body"
+      }
+    }
+  }
 }
 ```
 
-## `n2n_get_post`
+### `n2n_get_draft`
 
-Read an existing post before updating it, completing missing locales, or writing a follow-up.
+Read one server draft.
 
 ```json
 {
-  "id_or_slug": "example-product-guide"
+  "draft_id": "draft_01..."
 }
 ```
 
-## `n2n_get_scope_context`
+### `n2n_update_draft`
 
-Read controlled facts for a `content_scope` before drafting scoped content.
+Update a server draft.
 
 ```json
 {
-  "content_scope": "product:example-product"
+  "draft_id": "draft_01...",
+  "content_payload": {
+    "type": "guide",
+    "locales": {
+      "en": {
+        "title": "Updated Guide",
+        "excerpt": "Updated summary.",
+        "content": "Updated Markdown body"
+      }
+    }
+  }
 }
 ```
 
-The backend returns `content_scope` plus host-defined controlled fields, commonly `canonical_url`, `docs_url`, `summary`, `key_points`, and `do_not_claim`.
+### `n2n_validate_draft`
 
-## `n2n_create_post`
-
-Create a draft. Publishing is a separate step.
-
-Blog post example:
+Validate a saved draft.
 
 ```json
 {
-  "slug": "content-workflow-notes",
-  "type": "technical",
-  "locale": "en",
-  "title": "Content Workflow Notes",
-  "excerpt": "Practical notes from shipping a content workflow.",
-  "content": "## Notes\n\nMarkdown content..."
+  "draft_id": "draft_01...",
+  "mode": "publish"
 }
 ```
 
-Scoped content example (a type that requires a content_scope):
+### `n2n_preview_draft`
+
+Return host preview URL(s) for a saved draft.
 
 ```json
 {
-  "slug": "example-product-guide",
-  "type": "guide",
-  "content_scope": "product:example-product",
-  "locale": "en",
-  "title": "How to Use Example Product",
-  "excerpt": "A short guide to using the example product.",
-  "content": "## Overview\n\nMarkdown content..."
+  "draft_id": "draft_01..."
 }
 ```
 
-## `n2n_update_post`
+## Assets
 
-Update one locale of an existing post. Call `n2n_get_post` first.
+### `n2n_upload_asset`
+
+Upload only the selected asset.
 
 ```json
 {
-  "id_or_slug": "example-product-guide",
-  "locale": "de",
-  "title": "So verwenden Sie Example Product",
-  "excerpt": "A localized summary for the selected locale.",
-  "content": "## Ueberblick\n\nLocalized Markdown content..."
+  "draft_id": "draft_01...",
+  "purpose": "blog_thumbnail",
+  "filename": "cover.webp",
+  "content_type": "image/webp",
+  "data_base64": "..."
 }
 ```
 
-## `n2n_update_draft`
+## Publishing
 
-Update one locale of an unpublished draft. The client reads the post first and refuses to patch unless the backend reports `status: "draft"`.
+### `n2n_publish_draft`
+
+Publish after explicit publish confirmation.
 
 ```json
 {
-  "id_or_slug": "example-product-guide",
-  "locale": "en",
-  "title": "How to Use Example Product",
-  "excerpt": "A refined summary for the draft.",
-  "content": "## Overview\n\nUpdated draft Markdown content..."
+  "draft_id": "draft_01...",
+  "publish_confirmed": true,
+  "acknowledged_warnings": []
 }
 ```
-
-## `n2n_publish_post`
-
-Publish an existing draft.
-
-```json
-{
-  "id_or_slug": "example-product-guide"
-}
-```
-
-Publishing state is managed exclusively through this tool, not through create or update payloads.
-
-## Client method mapping
-
-- `ContentClient.listDrafts(input)` calls `GET /posts` with `status=draft` plus the provided list filters.
-- `ContentClient.updateDraft(input)` calls `GET /posts/{id_or_slug}` first, checks `status === "draft"`, then calls `PATCH /posts/{id_or_slug}`.

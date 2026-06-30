@@ -4,6 +4,26 @@ All notable changes to N2N Post2Site are documented in this file.
 
 ## Unreleased
 
+## [0.2.0] - 2026-07-01
+
+### Changed
+
+- **Breaking:** replaced the old `/posts` CRUD tool set with the Post2Site MCP publishing workflow: discovery, inventory, working validation, server drafts, selected asset upload, preview, and explicit publish.
+- Treat `content_payload` as a host-defined JSON object. The MCP bridge no longer models blog-specific fields or `content_scope`.
+- Publish now targets `POST /drafts/{draft_id}/publish` with explicit publish confirmation.
+- Authentication now sends `X-API-KEY` only, matching the Laravel Post2Site publishing contract.
+
+### Added
+
+- Added discovery tools for capabilities, site context, and editorial policy.
+- Added inventory and duplicate-check tools.
+- Added draft validation, preview, asset upload, and publish tools.
+
+### Removed
+
+- Removed old `n2n_create_post`, `n2n_update_post`, `n2n_get_post`, `n2n_list_posts`, `n2n_get_scope_context`, and `n2n_publish_post` tools.
+- Removed client-side `content_scope` validation.
+
 ## [0.1.4] - 2026-06-24
 
 ### Changed
@@ -43,7 +63,7 @@ All notable changes to N2N Post2Site are documented in this file.
 
 - Product guide creation guidance now requires reading product context before drafting.
 - Content creation guidance now requires searching existing posts first, and update guidance requires reading the target post first.
-- Clarified that create/update must not send publication governance fields such as `status`, `published_at`, `user_id`, or `author`; publishing remains a separate explicit tool call.
+- Clarified that create/update must not send publication governance fields such as `status`, `published_at`, or `author`; publishing remains a separate explicit tool call.
 - Version bumped to `0.1.2`.
 
 ## [0.1.1] - 2026-06-15

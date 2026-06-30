@@ -11,9 +11,9 @@ describe('ContentClient', () => {
     vi.restoreAllMocks();
   });
 
-  it('reads capabilities through the configured capabilities endpoint', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ contract: 'Content Publishing API Contract' }), {
+  it('reads discovery endpoints', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+      new Response(JSON.stringify({ ok: true }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
@@ -21,148 +21,190 @@ describe('ContentClient', () => {
 
     const client = new ContentClient(config);
     await client.getCapabilities();
+    await client.getSiteContext();
+    await client.getEditorialPolicy();
 
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
       'https://example.com/api/v1/mcp/capabilities',
-      expect.objectContaining({ method: 'GET' })
-    );
+      'https://example.com/api/v1/mcp/site-context',
+      'https://example.com/api/v1/mcp/editorial-policy',
+    ]);
   });
 
-  it('creates posts through the configured posts endpoint', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ ok: true }), { status: 201, headers: { 'Content-Type': 'application/json' } })
-    );
-
-    const client = new ContentClient(config);
-    await client.createPost({
-      slug: 'example-guide',
-      type: 'guide',
-      content_scope: 'product:example-product',
-      locale: 'en',
-      title: 'Example Guide',
-      content: '## Markdown body',
-    });
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://example.com/api/v1/mcp/posts',
-      expect.objectContaining({
-        method: 'POST',
-        headers: expect.objectContaining({
-          Authorization: 'Bearer test_key',
-          'X-API-KEY': 'test_key',
-        }),
-        body: expect.stringContaining('"content_scope":"product:example-product"'),
-      })
-    );
-  });
-
-  it('lists drafts through the posts endpoint with a draft status filter', async () => {
+  it('lists inventory through the inventory endpoint', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ data: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })
     );
 
     const client = new ContentClient(config);
-    await client.listDrafts({
+    await client.listInventory({
       type: 'guide',
-      content_scope: 'product:example-product',
-      q: 'setup',
+      topic: 'visa-policy',
+      q: 'official site',
       per_page: 20,
     });
 
     const calledUrl = new URL(fetchMock.mock.calls[0]?.[0] as string);
-    expect(calledUrl.pathname).toBe('/api/v1/mcp/posts');
-    expect(calledUrl.searchParams.get('status')).toBe('draft');
+    expect(calledUrl.pathname).toBe('/api/v1/mcp/inventory/resources');
     expect(calledUrl.searchParams.get('type')).toBe('guide');
-    expect(calledUrl.searchParams.get('content_scope')).toBe('product:example-product');
-    expect(calledUrl.searchParams.get('q')).toBe('setup');
+    expect(calledUrl.searchParams.get('topic')).toBe('visa-policy');
+    expect(calledUrl.searchParams.get('q')).toBe('official site');
     expect(calledUrl.searchParams.get('per_page')).toBe('20');
   });
 
-  it('reads scope context through the configured scopes endpoint', async () => {
+  it('validates local working drafts without creating server drafts', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ content_scope: 'product:example-product' }), {
-        status: 200,
+      new Response(JSON.stringify({ publishable: true }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    );
+
+    const client = new ContentClient(config);
+    await client.validateWorkingDraft({
+      mode: 'draft',
+      article: {
+        mode: 'create',
+        target_identifier: 'example-guide',
+        content_payload: { title: 'Example' },
+      },
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.com/api/v1/mcp/working-drafts/validate',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"target_identifier":"example-guide"'),
+      })
+    );
+  });
+
+  it('creates and updates server drafts through draft endpoints', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+      new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    );
+
+    const client = new ContentClient(config);
+    await client.createDraft({
+      mode: 'create',
+      target_identifier: 'example-guide',
+      content_payload: { locales: { en: { title: 'Example' } } },
+    });
+    await client.updateDraft({
+      draft_id: 'draft_123',
+      content_payload: { locales: { en: { title: 'Updated' } } },
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://example.com/api/v1/mcp/drafts',
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://example.com/api/v1/mcp/drafts/draft_123',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: expect.stringContaining('"Updated"'),
+      })
+    );
+  });
+
+  it('uploads selected assets only through the asset endpoint', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ asset_id: 'asset_123' }), { status: 201, headers: { 'Content-Type': 'application/json' } })
+    );
+
+    const client = new ContentClient(config);
+    await client.uploadAsset({
+      draft_id: 'draft_123',
+      purpose: 'blog_thumbnail',
+      filename: 'cover.webp',
+      content_type: 'image/webp',
+      data_base64: 'ZmFrZQ==',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.com/api/v1/mcp/assets',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"purpose":"blog_thumbnail"'),
+      })
+    );
+  });
+
+  it('publishes drafts with explicit confirmation and api key headers', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ status: 'published' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    );
+
+    const client = new ContentClient(config);
+    await client.publishDraft({
+      draft_id: 'draft_123',
+      publish_confirmed: true,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.com/api/v1/mcp/drafts/draft_123/publish',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          'X-API-KEY': 'test_key',
+        }),
+        body: expect.stringContaining('"publish_confirmed":true'),
+      })
+    );
+  });
+
+  it('returns validation payloads for draft validation blockers', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ publishable: false, blockers: [{ code: 'missing_title' }] }), {
+        status: 422,
         headers: { 'Content-Type': 'application/json' },
       })
     );
 
     const client = new ContentClient(config);
-    await client.getScopeContext({ content_scope: 'product:example-product' });
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://example.com/api/v1/mcp/scopes/product%3Aexample-product',
-      expect.objectContaining({ method: 'GET' })
-    );
+    await expect(client.validateDraft({ draft_id: 'draft_123', mode: 'publish' })).resolves.toEqual({
+      publishable: false,
+      blockers: [{ code: 'missing_title' }],
+    });
   });
 
-  it('publishes posts through the publish endpoint', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } })
-    );
-
-    const client = new ContentClient(config);
-    await client.publishPost('example-guide');
-
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://example.com/api/v1/mcp/posts/example-guide/publish',
-      expect.objectContaining({ method: 'POST' })
-    );
-  });
-
-  it('updates drafts only after verifying the current post status', async () => {
+  it('returns validation payloads for working draft and publish blockers', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ id: 123, status: 'draft' }), {
-          status: 200,
+        new Response(JSON.stringify({ publishable: false, blockers: [{ code: 'missing_locales' }] }), {
+          status: 422,
           headers: { 'Content-Type': 'application/json' },
         })
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
+        new Response(JSON.stringify({ publishable: false, blockers: [{ code: 'missing_thumbnail' }] }), {
+          status: 422,
           headers: { 'Content-Type': 'application/json' },
         })
       );
 
     const client = new ContentClient(config);
-    await client.updateDraft({
-      id_or_slug: 'example-guide',
-      locale: 'en',
-      title: 'Updated Draft',
+    await expect(client.validateWorkingDraft({
+      mode: 'publish',
+      article: {
+        mode: 'create',
+        target_identifier: 'draft-with-blockers',
+        content_payload: {},
+      },
+    })).resolves.toEqual({
+      publishable: false,
+      blockers: [{ code: 'missing_locales' }],
     });
 
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      'https://example.com/api/v1/mcp/posts/example-guide',
-      expect.objectContaining({ method: 'GET' })
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      'https://example.com/api/v1/mcp/posts/example-guide',
-      expect.objectContaining({
-        method: 'PATCH',
-        body: expect.stringContaining('"title":"Updated Draft"'),
-      })
-    );
-  });
+    await expect(client.publishDraft({
+      draft_id: 'draft_123',
+      publish_confirmed: true,
+    })).resolves.toEqual({
+      publishable: false,
+      blockers: [{ code: 'missing_thumbnail' }],
+    });
 
-  it('refuses to update published posts through the draft update path', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify({ id: 123, status: 'published' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    );
-
-    const client = new ContentClient(config);
-
-    await expect(client.updateDraft({
-      id_or_slug: 'example-guide',
-      locale: 'en',
-      title: 'Updated Draft',
-    })).rejects.toThrow(/requires a draft post/);
-
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('throws generic readable errors for failed api calls', async () => {
@@ -171,6 +213,6 @@ describe('ContentClient', () => {
     );
 
     const client = new ContentClient(config);
-    await expect(client.getPost('missing')).rejects.toThrow(/Content API request failed: 401 Unauthorized/);
+    await expect(client.getDraft({ draft_id: 'missing' })).rejects.toThrow(/Content API request failed: 401 Unauthorized/);
   });
 });

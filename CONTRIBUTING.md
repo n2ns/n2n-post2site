@@ -22,7 +22,7 @@ npm run check
 
 - Do not commit `.env` files or API keys.
 - Do not commit generated `node_modules/` or `dist/`.
-- Explain user-visible behavior changes in the PR description.
+- Explain public behavior changes in the PR description.
 
 ## Backend Contract
 
@@ -30,4 +30,4 @@ N2N Post2Site is a generic MCP client of the Content Publishing API Contract. Ch
 
 ## Changelog
 
-User-visible changes should be recorded in `CHANGELOG.md`.
+Public changes should be recorded in `CHANGELOG.md`.

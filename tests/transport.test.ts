@@ -67,7 +67,6 @@ describe('transport and transport-aware client', () => {
       headers: expect.objectContaining({
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        Authorization: 'Bearer test_key',
         'X-API-KEY': 'test_key',
       }),
     });
