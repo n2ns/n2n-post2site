@@ -1,38 +1,14 @@
 # n2n-post2site Tools Reference
 
+Tools are reserved for complex queries and actions. Read-only site context and single-resource reads are exposed as MCP resources instead; see [Resources Reference](./RESOURCES_REFERENCE.md).
+
 All tools call the backend at `CONTENT_API_BASE_URL` with `X-API-KEY: CONTENT_API_KEY`.
-
-## Discovery
-
-### `n2n_get_capabilities`
-
-Read workflow flags, auth mode, safety boundaries, endpoints, and host-declared schema.
-
-```json
-{}
-```
-
-### `n2n_get_site_context`
-
-Read host positioning, product/content context, supported locales, and URL patterns.
-
-```json
-{}
-```
-
-### `n2n_get_editorial_policy`
-
-Read host editorial policy, evidence rules, CTA rules, prohibited claims, and publish blockers.
-
-```json
-{}
-```
 
 ## Inventory
 
 ### `n2n_list_inventory`
 
-List existing content before drafting.
+List existing content before drafting. Returned items include `resource_uri` when they can be opened through `post2site://inventory/resources/{target_identifier}`.
 
 ```json
 {
@@ -43,29 +19,9 @@ List existing content before drafting.
 }
 ```
 
-### `n2n_get_inventory_resource`
-
-Read one existing content resource by host target identifier.
-
-```json
-{
-  "target_identifier": "vietnam-evisa-official-website-guide"
-}
-```
-
-### `n2n_get_inventory_stats`
-
-Read host inventory statistics such as topic counts.
-
-```json
-{
-  "type": "guide"
-}
-```
-
 ### `n2n_check_duplicates`
 
-Check duplicate risk for a proposed article.
+Check duplicate risk for proposed host content.
 
 ```json
 {
@@ -106,7 +62,7 @@ Validate a local-only working draft without creating a server draft.
 
 ### `n2n_list_drafts`
 
-List saved server drafts.
+List saved server drafts. Returned items include `resource_uri` when they can be opened through `post2site://drafts/{draft_id}`.
 
 ```json
 {
@@ -117,7 +73,7 @@ List saved server drafts.
 
 ### `n2n_create_draft`
 
-Create a server draft after the working draft is confirmed for remote saving.
+Create a server draft after the working draft is confirmed for remote saving. The response includes the canonical draft resource URI.
 
 ```json
 {
@@ -137,19 +93,9 @@ Create a server draft after the working draft is confirmed for remote saving.
 }
 ```
 
-### `n2n_get_draft`
-
-Read one server draft.
-
-```json
-{
-  "draft_id": "draft_01..."
-}
-```
-
 ### `n2n_update_draft`
 
-Update a server draft.
+Update a server draft. Use `post2site://drafts/{draft_id}` to read the draft.
 
 ```json
 {
@@ -197,7 +143,7 @@ Upload only the selected asset.
 ```json
 {
   "draft_id": "draft_01...",
-  "purpose": "blog_thumbnail",
+  "purpose": "primary_image",
   "filename": "cover.webp",
   "content_type": "image/webp",
   "data_base64": "..."

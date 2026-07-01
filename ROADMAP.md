@@ -1,29 +1,31 @@
 # N2N Post2Site Roadmap
 
-## Current State - v0.2.x
+## Current State - v0.3.x
 
-The v0.2 series aligns n2n-post2site with the Post2Site MCP publishing workflow:
+The v0.3 series exposes the clean Post2Site MCP publishing surface:
 
-- Discover host capabilities, site context, and editorial policy.
-- Inspect existing inventory and topic coverage.
+- Read host capabilities, site context, editorial policy, and inventory stats through MCP Resources.
+- Inspect existing inventory and topic coverage through list/search tools.
 - Check duplicate risk before saving.
 - Validate local-only working drafts without persistence.
 - Create, update, validate, and preview server drafts.
 - Upload only selected assets.
 - Publish with explicit publish confirmation.
+- Follow `resource_link` blocks from list and mutation tool responses to detail resources.
+- Run protocol-level MCP smoke testing with `npm run smoke:mcp`.
 
 The MCP client remains intentionally thin. Host content fields live inside `content_payload`; the backend remains responsible for validation, storage, preview, and publishing.
 
 ## Next - Client Ergonomics
 
-- Add richer tool descriptions for common AI IDE flows.
-- Add examples for Antigravity, Claude Code, and Codex MCP configuration.
-- Add a short "write article" prompt recipe that uses the two-confirmation workflow.
+- Complete real-client smoke checks for Antigravity IDE, Claude Code, and Codex.
+- Add concrete client configuration snippets once those client checks are verified.
+- Improve examples for following `resource_link` results in clients with weaker resource UI.
 
 ## Contract Reference
 
-- Publish an OpenAPI-style reference for the HTTP endpoints.
-- Add backend conformance tests that any implementation can run.
+- Publish an OpenAPI-style reference for the HTTP endpoints if host implementers need generated clients.
+- Add backend conformance tests that any non-Laravel implementation can run.
 - Keep `n2ns/laravel-post2site` as the first-party Laravel backend package.
 
 ## Assets
@@ -40,3 +42,4 @@ The MCP client remains intentionally thin. Host content fields live inside `cont
 - Account administration.
 - Payment, subscription, product, or pricing administration.
 - Multi-site selection inside tool arguments. Use one MCP server config per site.
+- MCP Prompts, subscriptions, and completion support until there is a concrete target-client need.

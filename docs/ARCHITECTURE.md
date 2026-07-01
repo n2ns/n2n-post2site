@@ -24,24 +24,32 @@ n2n-post2site is a local stdio MCP server. It is intentionally a thin bridge bet
 
 `src/server.ts`
 
-Registers 16 tools:
+Registers 4 static resources:
 
-- `n2n_get_capabilities`
-- `n2n_get_site_context`
-- `n2n_get_editorial_policy`
+- `post2site://capabilities`
+- `post2site://site-context`
+- `post2site://editorial-policy`
+- `post2site://inventory/stats`
+
+Registers 2 resource templates:
+
+- `post2site://inventory/resources/{target_identifier}`
+- `post2site://drafts/{draft_id}`
+
+Registers 10 tools:
+
 - `n2n_list_inventory`
-- `n2n_get_inventory_resource`
-- `n2n_get_inventory_stats`
 - `n2n_check_duplicates`
 - `n2n_validate_working_draft`
 - `n2n_list_drafts`
 - `n2n_create_draft`
-- `n2n_get_draft`
 - `n2n_update_draft`
 - `n2n_validate_draft`
 - `n2n_preview_draft`
 - `n2n_upload_asset`
 - `n2n_publish_draft`
+
+Read-only site context, inventory stats, individual inventory resources, and individual drafts are resources, not tools.
 
 ### Tools
 
@@ -51,9 +59,21 @@ Tools only:
 
 - Validate input with Zod.
 - Call a `ContentClient` method.
-- Wrap the backend response with `createTextResult`.
+- Wrap the backend response with `createJsonResult`.
+- Add canonical resource URIs and MCP `resource_link` content blocks when returned data can be opened as a resource.
 
 They do not handle host content rules, storage, publish policy, or review logic.
+
+### Resources
+
+`src/resources/*.ts`
+
+Resources only:
+
+- Read backend data without changing state.
+- Return `application/json` resource contents.
+- Enforce a 200 KiB JSON text limit for detail resources.
+- Decode resource template variables once before calling the HTTP client.
 
 ### Client and Transport
 
@@ -78,7 +98,7 @@ Defines MCP input shapes. `content_payload` is intentionally `record<string, unk
 
 Typical publish flow:
 
-1. AI calls discovery and inventory tools.
+1. AI reads discovery resources and calls inventory tools.
 2. AI drafts locally in the chat/IDE.
 3. AI calls `n2n_validate_working_draft` for non-persistent checks.
 4. Draft is confirmed for remote saving.
@@ -96,11 +116,14 @@ Typical publish flow:
 - No backend-specific content fields in MCP core schemas.
 - No server-managed lifecycle fields in MCP payloads.
 - Publish is explicit and separate from draft create/update.
+- No compatibility aliases for removed tools.
 - The backend is the source of truth for validation, preview, publish, and public URLs.
 
 ## Tests
 
-- `tests/server.test.ts`: tool registration.
+- `tests/server.test.ts`: tool/resource registration and resource-link behavior.
 - `tests/client.test.ts`: HTTP path, header, and payload mapping.
 - `tests/schema.test.ts`: MCP input schema behavior.
 - `tests/transport.test.ts`: transport parsing and injected transport behavior.
+- `scripts/check-dist-surface.mjs`: built output guard for the final MCP surface.
+- `scripts/smoke-mcp.mjs`: protocol-level stdio smoke test against a local mock backend.

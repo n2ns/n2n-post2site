@@ -19,29 +19,36 @@ n2n-post2site connects an AI IDE client to a protected website publishing API. I
 
 ## Primary tools
 
-- `n2n_get_capabilities`
-- `n2n_get_site_context`
-- `n2n_get_editorial_policy`
 - `n2n_list_inventory`
-- `n2n_get_inventory_resource`
-- `n2n_get_inventory_stats`
 - `n2n_check_duplicates`
 - `n2n_validate_working_draft`
 - `n2n_list_drafts`
 - `n2n_create_draft`
-- `n2n_get_draft`
 - `n2n_update_draft`
 - `n2n_validate_draft`
 - `n2n_preview_draft`
 - `n2n_upload_asset`
 - `n2n_publish_draft`
 
+## Primary resources
+
+- `post2site://capabilities`
+- `post2site://site-context`
+- `post2site://editorial-policy`
+- `post2site://inventory/stats`
+- `post2site://inventory/resources/{target_identifier}`
+- `post2site://drafts/{draft_id}`
+
 ## Docs
 
 - `README.md`: overview and setup.
 - `docs/BACKEND_API.md`: HTTP contract.
+- `docs/RESOURCES_REFERENCE.md`: read-only MCP resources.
 - `docs/TOOLS_REFERENCE.md`: tool schemas and examples.
 - `docs/ARCHITECTURE.md`: runtime layers.
+- `docs/CLIENT_SMOKE.md`: protocol and client smoke testing.
+- `examples/mock-backend/README.md`: local example backend.
+- `ROADMAP.md`: current state and scoped next work.
 - `CHANGELOG.md`: release history.
 
 Package: `n2n-post2site`

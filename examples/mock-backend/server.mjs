@@ -21,6 +21,15 @@ const inventory = new Map([
     summary: 'Seeded published guide.',
     host_fields: { type: 'guide', topics: ['getting-started'] },
   }],
+  ['guides/example-post', {
+    id: 'post_2',
+    target_identifier: 'guides/example-post',
+    display_label: 'Nested Example Post',
+    status: 'published',
+    urls: { canonical: `http://127.0.0.1:${PORT}/blog/guides/example-post` },
+    summary: 'Seeded slash-containing identifier example.',
+    host_fields: { type: 'guide', topics: ['getting-started'] },
+  }],
 ]);
 const drafts = new Map();
 const assets = new Map();
@@ -77,7 +86,7 @@ const capabilities = {
     },
     asset_limits: {
       allowed_content_types: ['image/webp', 'image/png', 'image/jpeg'],
-      allowed_purposes: ['blog_thumbnail'],
+      allowed_purposes: ['primary_image'],
       max_bytes: 3145728,
     },
   },
@@ -224,7 +233,7 @@ const server = createServer(async (req, res) => {
       return json(res, 200, { items, host_metadata: { total: items.length } });
     }
 
-    let match = path.match(/^\/inventory\/resources\/([^/]+)$/);
+    let match = path.match(/^\/inventory\/resources\/(.+)$/);
     if (method === 'GET' && match) {
       const item = inventory.get(decodeURIComponent(match[1]));
       return item ? json(res, 200, { item, host_metadata: {} }) : json(res, 404, { error: { code: 'not_found', message: 'Not found' } });

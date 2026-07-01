@@ -30,7 +30,14 @@ API_KEY=demo-key PORT=8787 node server.mjs
 - API-key auth through `X-API-KEY`.
 - Discovery endpoints.
 - Inventory and duplicate checks.
+- Inventory detail reads for `post2site://inventory/resources/{target_identifier}`, including percent-encoded `/` values.
 - Non-persistent working draft validation.
 - Server draft create, update, validate, preview, and publish.
 - Selected asset upload.
 - Explicit publish confirmation through `publish_confirmed`.
+
+For automated MCP surface verification, use the built-in protocol smoke test from the project root:
+
+```bash
+npm run smoke:mcp
+```

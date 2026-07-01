@@ -1,7 +1,7 @@
 {
   "name": "n2n-post2site",
-  "version": "0.2.0",
-  "description": "AI-assisted content publishing MCP server for blogs, guides, and categorized content.",
+  "version": "0.3.0",
+  "description": "AI-assisted website content publishing MCP server.",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/n2ns/n2n-post2site.git"
@@ -14,7 +14,10 @@
     "build": "rm -rf dist && tsc && chmod 755 dist/index.js",
     "dev": "tsx src/index.ts",
     "test": "vitest run",
-    "check": "npm run build && npm test"
+    "check": "npm run build && npm test && npm run check:dist && node scripts/smoke-mcp.mjs",
+    "check:dist": "node scripts/check-dist-surface.mjs",
+    "smoke:mcp": "npm run build && node scripts/smoke-mcp.mjs",
+    "prepack": "npm run build && npm run check:dist"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -24,7 +27,7 @@
     "@types/node": "^24.0.0",
     "tsx": "^4.22.4",
     "typescript": "^5.8.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   },
   "engines": {
     "node": ">=22"

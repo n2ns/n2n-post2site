@@ -2,7 +2,24 @@
 
 All notable changes to N2N Post2Site are documented in this file.
 
-## Unreleased
+## [0.3.0] - 2026-07-02
+
+### Changed
+
+- **Breaking:** removed read-only MCP tools and exposed their data as MCP resources instead: capabilities, site context, editorial policy, inventory stats, inventory resource details, and draft details.
+- Tool surface is now limited to complex inventory checks and state-changing publishing actions.
+- List and mutation tool responses now include canonical resource URIs and MCP `resource_link` blocks when a returned inventory item or draft can be opened as a resource.
+
+### Added
+
+- Added static MCP resources for `post2site://capabilities`, `post2site://site-context`, `post2site://editorial-policy`, and `post2site://inventory/stats`.
+- Added resource templates for `post2site://inventory/resources/{target_identifier}` and `post2site://drafts/{draft_id}`.
+- Added a dist surface check so packaged output cannot keep removed tools after source refactors.
+- Added an MCP protocol smoke test that starts the built server over stdio, verifies the final Tool/Resource surface, reads resources, calls tools, and checks `resource_link` output.
+
+### Removed
+
+- Removed `n2n_get_capabilities`, `n2n_get_site_context`, `n2n_get_editorial_policy`, `n2n_get_inventory_resource`, `n2n_get_inventory_stats`, and `n2n_get_draft`.
 
 ## [0.2.0] - 2026-07-01
 

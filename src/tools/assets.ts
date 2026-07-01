@@ -1,17 +1,21 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { ContentClient } from '../content-client.js';
-import { createTextResult } from '../result.js';
+import { createJsonResult } from '../result.js';
 import { uploadAssetSchema } from '../schemas/blog-post.js';
 
 export function registerAssetTools(server: McpServer, client: ContentClient): void {
-  server.tool(
+  server.registerTool(
     'n2n_upload_asset',
-    'Upload only a selected asset, such as the chosen thumbnail image. Do not upload unselected image candidates.',
-    uploadAssetSchema.shape,
+    {
+      title: 'Upload Asset',
+      description: 'Upload only a selected asset, such as the chosen thumbnail image. Do not upload unselected image candidates.',
+      inputSchema: uploadAssetSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false },
+    },
     async (input) => {
       const parsed = uploadAssetSchema.parse(input);
-      return createTextResult(await client.uploadAsset(parsed));
+      return createJsonResult(await client.uploadAsset(parsed));
     }
   );
 }

@@ -2,7 +2,7 @@
 
 This document defines the HTTP contract expected by n2n-post2site. All endpoints are relative to `CONTENT_API_BASE_URL`, for example `https://example.com/api/v1/mcp`.
 
-The backend handles storage, validation, preview rendering, publication, and host-specific content fields. n2n-post2site only forwards MCP tool calls to this API.
+The backend handles storage, validation, preview rendering, publication, and host-specific content fields. n2n-post2site forwards MCP tool calls and resource reads to this API.
 
 ## Authentication
 
@@ -32,6 +32,8 @@ GET  /inventory/resources/{target_identifier}
 GET  /inventory/stats
 POST /inventory/duplicates
 ```
+
+`target_identifier` may contain `/`. Clients percent-encode it in the MCP resource URI, and the bridge forwards it to the backend as a URL-encoded path segment.
 
 Drafts:
 
@@ -63,7 +65,11 @@ Server-managed fields must not be accepted inside `content_payload`, including:
 - `status`
 - `published_at`
 - `author`
-- host markers such as `content_origin`, `managed_by`, or `authoring_source`
+- `content_origin`
+- `managed_by`
+- `authoring_source`
+- `source_type`
+- `content_scope`
 
 ## Draft Creation
 
@@ -90,8 +96,15 @@ The response should include at least:
   "mode": "create",
   "target_identifier": "example-guide",
   "status": "draft",
+  "version": 1,
   "content_payload": {},
-  "validation_state": {}
+  "asset_refs": [],
+  "validation_state": {},
+  "client_metadata": {},
+  "created_at": "2026-07-02T00:00:00.000000Z",
+  "updated_at": "2026-07-02T00:00:00.000000Z",
+  "published_at": null,
+  "publish_result": null
 }
 ```
 
@@ -104,7 +117,7 @@ POST /assets
 ```json
 {
   "draft_id": "draft_01...",
-  "purpose": "blog_thumbnail",
+  "purpose": "primary_image",
   "filename": "cover.webp",
   "content_type": "image/webp",
   "data_base64": "...",

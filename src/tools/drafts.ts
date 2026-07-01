@@ -1,10 +1,14 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { ContentClient } from '../content-client.js';
-import { createTextResult } from '../result.js';
+import {
+  addDraftResourceUris,
+  collectDraftResourceLinks,
+  createJsonResult,
+  draftResourceLink,
+} from '../result.js';
 import {
   createDraftSchema,
-  getDraftSchema,
   listDraftsSchema,
   previewDraftSchema,
   updateDraftSchema,
@@ -13,73 +17,91 @@ import {
 } from '../schemas/blog-post.js';
 
 export function registerDraftTools(server: McpServer, client: ContentClient): void {
-  server.tool(
+  server.registerTool(
     'n2n_validate_working_draft',
-    'Run backend validation against a local-only working draft without creating a server draft or uploading assets.',
-    validateWorkingDraftSchema.shape,
+    {
+      title: 'Validate Working Draft',
+      description: 'Run backend validation against a local-only working draft without creating a server draft or uploading assets.',
+      inputSchema: validateWorkingDraftSchema.shape,
+      annotations: { readOnlyHint: true },
+    },
     async (input) => {
       const parsed = validateWorkingDraftSchema.parse(input);
-      return createTextResult(await client.validateWorkingDraft(parsed));
+      return createJsonResult(await client.validateWorkingDraft(parsed));
     }
   );
 
-  server.tool(
+  server.registerTool(
     'n2n_list_drafts',
-    'List server-side drafts previously saved through n2n_create_draft.',
-    listDraftsSchema.shape,
+    {
+      title: 'List Drafts',
+      description: 'List server-side drafts previously saved through n2n_create_draft. Returned items include canonical post2site:// draft resource URIs for detail reads.',
+      inputSchema: listDraftsSchema.shape,
+      annotations: { readOnlyHint: true },
+    },
     async (input) => {
       const parsed = listDraftsSchema.parse(input);
-      return createTextResult(await client.listDrafts(parsed));
+      const result = addDraftResourceUris(await client.listDrafts(parsed));
+      return createJsonResult(result, collectDraftResourceLinks(result));
     }
   );
 
-  server.tool(
+  server.registerTool(
     'n2n_create_draft',
-    'Create a server-side draft only after the working draft is confirmed for remote saving. content_payload is host-defined.',
-    createDraftSchema.shape,
+    {
+      title: 'Create Draft',
+      description: 'Create a server-side draft only after the working draft is confirmed for remote saving. content_payload is host-defined.',
+      inputSchema: createDraftSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false },
+    },
     async (input) => {
       const parsed = createDraftSchema.parse(input);
-      return createTextResult(await client.createDraft(parsed));
+      const result = addDraftResourceUris(await client.createDraft(parsed));
+      return createJsonResult(result, collectDraftResourceLinks(result));
     }
   );
 
-  server.tool(
-    'n2n_get_draft',
-    'Read one server-side draft by draft_id before updating, previewing, or publishing it.',
-    getDraftSchema.shape,
-    async (input) => {
-      const parsed = getDraftSchema.parse(input);
-      return createTextResult(await client.getDraft(parsed));
-    }
-  );
-
-  server.tool(
+  server.registerTool(
     'n2n_update_draft',
-    'Update a server-side draft.',
-    updateDraftSchema.shape,
+    {
+      title: 'Update Draft',
+      description: 'Update a server-side draft.',
+      inputSchema: updateDraftSchema.shape,
+      annotations: { readOnlyHint: false },
+    },
     async (input) => {
       const parsed = updateDraftSchema.parse(input);
-      return createTextResult(await client.updateDraft(parsed));
+      const result = addDraftResourceUris(await client.updateDraft(parsed));
+      return createJsonResult(result, [draftResourceLink(parsed.draft_id)]);
     }
   );
 
-  server.tool(
+  server.registerTool(
     'n2n_validate_draft',
-    'Validate a saved server draft in draft or publish mode and return host blockers and warnings.',
-    validateDraftSchema.shape,
+    {
+      title: 'Validate Draft',
+      description: 'Validate a saved server draft in draft or publish mode and return host blockers and warnings.',
+      inputSchema: validateDraftSchema.shape,
+      annotations: { readOnlyHint: false },
+    },
     async (input) => {
       const parsed = validateDraftSchema.parse(input);
-      return createTextResult(await client.validateDraft(parsed));
+      return createJsonResult(await client.validateDraft(parsed), [draftResourceLink(parsed.draft_id)]);
     }
   );
 
-  server.tool(
+  server.registerTool(
     'n2n_preview_draft',
-    'Return host preview URLs for a saved server draft. Use this before publish confirmation.',
-    previewDraftSchema.shape,
+    {
+      title: 'Preview Draft',
+      description: 'Return host preview URLs for a saved server draft. Use this before publish confirmation.',
+      inputSchema: previewDraftSchema.shape,
+      annotations: { readOnlyHint: false },
+    },
     async (input) => {
       const parsed = previewDraftSchema.parse(input);
-      return createTextResult(await client.previewDraft(parsed));
+      const result = addDraftResourceUris(await client.previewDraft(parsed));
+      return createJsonResult(result, [draftResourceLink(parsed.draft_id)]);
     }
   );
 }

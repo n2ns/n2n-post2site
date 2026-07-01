@@ -4,7 +4,7 @@ export const emptySchema = z.object({});
 export const draftModeSchema = z.enum(['create', 'update_existing']);
 export const validationModeSchema = z.enum(['draft', 'publish']);
 
-const contentPayloadSchema = z.record(z.unknown()).describe('Host-defined JSON object. Read n2n_get_capabilities before shaping it.');
+const contentPayloadSchema = z.record(z.unknown()).describe('Host-defined JSON object. Read post2site://capabilities before shaping it.');
 const clientMetadataSchema = z.record(z.unknown()).optional().describe('Optional non-secret client metadata for backend attribution.');
 
 export const listInventorySchema = z.object({
@@ -72,7 +72,7 @@ export const previewDraftSchema = getDraftSchema;
 
 export const uploadAssetSchema = z.object({
   draft_id: z.string().optional().describe('Optional server draft id to bind the asset immediately.'),
-  purpose: z.string().min(1).describe('Host-declared asset purpose. Read n2n_get_capabilities first.'),
+  purpose: z.string().min(1).describe('Host-declared asset purpose. Read post2site://capabilities first.'),
   filename: z.string().min(1).describe('Original filename for the selected asset.'),
   content_type: z.string().min(1).describe('MIME type, for example image/webp.'),
   data_base64: z.string().min(1).describe('Base64 encoded selected asset bytes. Upload only the selected image.'),

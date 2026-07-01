@@ -25,8 +25,8 @@ For Laravel sites, [`n2ns/laravel-post2site`](https://github.com/n2ns/laravel-po
 
 The intended authoring loop is:
 
-1. Discover the site contract with `n2n_get_capabilities`, `n2n_get_site_context`, and `n2n_get_editorial_policy`.
-2. Inspect existing content with `n2n_list_inventory`, `n2n_get_inventory_stats`, and `n2n_check_duplicates`.
+1. Read `post2site://capabilities`, `post2site://site-context`, and `post2site://editorial-policy`.
+2. Inspect existing content with `n2n_list_inventory`, `post2site://inventory/stats`, and `n2n_check_duplicates`.
 3. Draft locally in the chat/IDE. Use `n2n_validate_working_draft` for non-persistent backend validation.
 4. After the draft is confirmed for remote saving, call `n2n_create_draft`.
 5. Upload only the selected image with `n2n_upload_asset`, then update the draft if needed.
@@ -80,19 +80,27 @@ Using a local checkout:
 
 `CONTENT_API_BASE_URL` should point at the protected publishing API base, for example `https://your-site.example/api/v1/mcp`. Keep the API key out of prompts, screenshots, and article content.
 
+## MCP Resources
+
+Static resources:
+
+- `post2site://capabilities`
+- `post2site://site-context`
+- `post2site://editorial-policy`
+- `post2site://inventory/stats`
+
+Resource templates:
+
+- `post2site://inventory/resources/{target_identifier}`
+- `post2site://drafts/{draft_id}`
+
+List tools include canonical resource URIs and MCP `resource_link` blocks when returned rows can be opened as resources.
+
 ## MCP Tools
-
-Discovery:
-
-- `n2n_get_capabilities`
-- `n2n_get_site_context`
-- `n2n_get_editorial_policy`
 
 Inventory:
 
 - `n2n_list_inventory`
-- `n2n_get_inventory_resource`
-- `n2n_get_inventory_stats`
 - `n2n_check_duplicates`
 
 Drafting:
@@ -100,7 +108,6 @@ Drafting:
 - `n2n_validate_working_draft`
 - `n2n_list_drafts`
 - `n2n_create_draft`
-- `n2n_get_draft`
 - `n2n_update_draft`
 - `n2n_validate_draft`
 - `n2n_preview_draft`
@@ -110,7 +117,7 @@ Assets and publishing:
 - `n2n_upload_asset`
 - `n2n_publish_draft`
 
-See [Tools Reference](./docs/TOOLS_REFERENCE.md) for input examples.
+See [Resources Reference](./docs/RESOURCES_REFERENCE.md) and [Tools Reference](./docs/TOOLS_REFERENCE.md) for examples.
 
 ## Security Boundaries
 
@@ -131,14 +138,21 @@ The backend is responsible for authentication, validation, preview rendering, pu
 ```bash
 npm run build
 npm test
+npm run smoke:mcp
 npm run check
 ```
+
+`npm run check` runs build, unit tests, built-surface checks, and the MCP protocol smoke test.
 
 ## Related Docs
 
 - [Backend API Contract](./docs/BACKEND_API.md)
 - [Architecture](./docs/ARCHITECTURE.md)
+- [Resources Reference](./docs/RESOURCES_REFERENCE.md)
 - [Tools Reference](./docs/TOOLS_REFERENCE.md)
+- [Client Smoke Testing](./docs/CLIENT_SMOKE.md)
+- [Mock Backend Example](./examples/mock-backend/README.md)
+- [Roadmap](./ROADMAP.md)
 - [Changelog](./CHANGELOG.md)
 - [Security](./SECURITY.md)
 

@@ -10,12 +10,13 @@ npm run check
 ```
 
 `npm run check` runs the TypeScript build and the full test suite.
+It also checks the built `dist/` MCP surface and runs the protocol smoke test against a local mock backend.
 
 ## Pull Request Guidelines
 
 - Keep changes focused and easy to review.
 - Add or update tests for behavior changes.
-- Update `README.md` when tool schemas, the backend API contract, or safety boundaries change.
+- Update `README.md`, `docs/TOOLS_REFERENCE.md`, `docs/RESOURCES_REFERENCE.md`, and `docs/BACKEND_API.md` when MCP tools, resources, the backend API contract, or safety boundaries change.
 - Run `npm run check` before opening a PR.
 
 ## Commit Hygiene
@@ -26,7 +27,7 @@ npm run check
 
 ## Backend Contract
 
-N2N Post2Site is a generic MCP client of the Content Publishing API Contract. Changes to the MCP tool schemas should remain compatible with any conforming backend, not just a specific implementation. If a change requires a backend update, document the new contract requirement clearly in the PR.
+N2N Post2Site is a generic MCP client of the Post2Site publishing HTTP contract. Changes to MCP tool schemas, resource URIs, or resource templates should remain compatible with any conforming backend, not just the Laravel implementation. If a change requires a backend update, document the new contract requirement clearly in the PR.
 
 ## Changelog
 
