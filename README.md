@@ -6,6 +6,8 @@
 
 Local MCP bridge for AI-assisted website publishing.
 
+> **Draft with AI. Publish with intent.**
+
 n2n-post2site lets an AI IDE client talk to a protected website content API without exposing a database, filesystem, shell, deployment process, payments, or account administration. It is a thin stdio MCP server: validate tool input, map it to HTTP, and return the backend response.
 
 ## Architecture
